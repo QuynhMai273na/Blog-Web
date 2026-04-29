@@ -1,26 +1,28 @@
 "use client";
 // components/CommentSection.tsx
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
 type Comment = {
   id: string;
+  user_id: string;
   body: string;
   created_at: string;
   profiles: { display_name: string; avatar_url: string } | null;
 };
 
 export function CommentSection({ postId }: { postId: string }) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
   const [comments, setComments] = useState<Comment[]>([]);
   const [body, setBody] = useState("");
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
 
   // Load user hiện tại
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
-  }, []);
+  }, [supabase]);
 
   // Load comments ban đầu
   useEffect(() => {
@@ -30,7 +32,7 @@ export function CommentSection({ postId }: { postId: string }) {
       .eq("post_id", postId)
       .order("created_at")
       .then(({ data }) => setComments(data ?? []));
-  }, [postId]);
+  }, [postId, supabase]);
 
   // Realtime — comment mới hiện ngay không cần reload
   useEffect(() => {
@@ -59,7 +61,7 @@ export function CommentSection({ postId }: { postId: string }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [postId]);
+  }, [postId, supabase]);
 
   // Gửi comment
   async function handleSubmit() {
@@ -109,7 +111,7 @@ export function CommentSection({ postId }: { postId: string }) {
                 {new Date(c.created_at).toLocaleString("vi-VN")}
               </p>
             </div>
-            {user && (c as any).user_id === user.id && (
+            {user && c.user_id === user.id && (
               <button
                 onClick={() => handleDelete(c.id)}
                 className="text-[#D4748E] hover:text-[#C25E7A] text-xs self-start transition-colors"

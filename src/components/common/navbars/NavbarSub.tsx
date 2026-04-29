@@ -1,4 +1,5 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -13,33 +14,39 @@ export default function NavbarSub() {
   ];
 
   return (
-    <nav className="w-full bg-white/90 backdrop-blur-sm px-8 py-5 flex justify-between items-center sticky top-0 z-50 border-b border-rose-50">
-      {/* Brand Identity */}
-      <div className="font-serif text-2xl">
-        <span className="text-rose-200">Becoming</span>{" "}
-        <span className="text-sage-300 italic">Blooming</span>
-      </div>
+    <>
+      <nav className="fixed left-0 top-0 z-50 flex w-full items-center justify-between border-b border-[#f1ddd8] bg-white/95 px-6 py-3 shadow-sm backdrop-blur-sm">
+        <Link
+          href="/"
+          className="font-serif text-2xl font-semibold leading-none"
+        >
+          <span className="text-[#d96e83]">Becoming</span>{" "}
+          <span className="text-[#6b9b84] italic">Blooming</span>
+        </Link>
 
-      {/* Simplified Menu */}
-      <ul className="hidden md:flex gap-8 text-sage-800/70">
-        {links.map((link) => (
-          <li key={link.href}>
-            <Link
-              href={link.href}
-              className={`hover:text-sage-300 transition-colors font-medium ${
-                pathname === link.href ? "text-sage-300" : ""
-              }`}
-            >
-              {link.name}
-            </Link>
-          </li>
-        ))}
-      </ul>
+        <ul className="hidden items-center gap-6 font-sans text-base font-medium tracking-[0.01em] text-[#667568] md:flex">
+          {links.map((link) => (
+            <li key={link.href}>
+              <Link
+                href={link.href}
+                className={`transition-colors hover:text-[#c85f70] ${
+                  pathname === link.href ? "text-[#c85f70]" : ""
+                }`}
+              >
+                {link.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
 
-      {/* Auth Button */}
-      <button className="px-6 py-2 border border-rose-100 text-rose-200/50 rounded-xl cursor-not-allowed">
-        Đăng nhập
-      </button>
-    </nav>
+        <Link
+          href="/login"
+          className="rounded-lg border border-[#efc7cc] bg-white px-4 py-1.5 font-sans text-sm font-semibold text-[#c85f70] shadow-sm transition-all hover:border-[#d96e83] hover:bg-[#fff5f6] hover:text-[#a94556]"
+        >
+          Đăng nhập
+        </Link>
+      </nav>
+      <div className="h-[57px] shrink-0" aria-hidden="true" />
+    </>
   );
 }
