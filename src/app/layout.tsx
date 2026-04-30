@@ -18,7 +18,7 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
-  title: "Becoming Blooming | Chậm rãi lớn lên, dịu dàng nở hoa",
+  title: "Becoming Blooming",
   description: "Blog chia sẻ về phát triển bản thân, sức khỏe và tài chính.",
   icons: {
     icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>",
