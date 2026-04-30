@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import AuthAvatarMenu from "@/components/common/AuthAvatarMenu";
 
 export default function NavbarMain() {
   const pathname = usePathname();
@@ -27,8 +28,6 @@ export default function NavbarMain() {
 
         <ul className="hidden items-center gap-6 font-sans text-base font-medium tracking-[0.01em] text-[#667568] md:flex">
           {menuItems.map((item) => {
-            // Logic kiểm tra trang hiện tại:
-            // Nếu là trang chủ ("/") thì phải khớp tuyệt đối. Nếu là các trang danh mục thì dùng startsWith để bao trọn trang con.
             const isActive =
               item.href === "/"
                 ? pathname === "/"
@@ -39,7 +38,7 @@ export default function NavbarMain() {
                 <Link
                   href={item.href}
                   className={`transition-colors hover:text-[#c85f70] ${
-                    isActive ? "text-[#c85f70] font-semibold" : ""
+                    isActive ? "font-semibold text-[#c85f70]" : ""
                   }`}
                 >
                   {item.name}
@@ -49,12 +48,7 @@ export default function NavbarMain() {
           })}
         </ul>
 
-        <Link
-          href="/login"
-          className="rounded-lg border border-[#efc7cc] bg-white px-4 py-1.5 font-sans text-sm font-semibold text-[#c85f70] shadow-sm transition-all hover:border-[#d96e83] hover:bg-[#fff5f6] hover:text-[#a94556]"
-        >
-          Đăng nhập
-        </Link>
+        <AuthAvatarMenu />
       </nav>
       <div className="h-[57px] shrink-0" aria-hidden="true" />
     </>

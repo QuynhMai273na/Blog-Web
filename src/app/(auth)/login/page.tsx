@@ -1,37 +1,69 @@
-// // src/app/(auth)/login/page.tsx
 "use client";
-import { useState } from "react";
+
 import Link from "next/link";
-import { signInWithGoogle } from "@/services/auth.service";
+import { useRouter } from "next/navigation";
+import type React from "react";
+import { FormEvent, useState } from "react";
+import { signInWithEmail, signInWithGoogle } from "@/services/auth.service";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [googleError, setGoogleError] = useState<string | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
+  const [message, setMessage] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return new URLSearchParams(window.location.search).get("verified")
+      ? "Xác thực email thành công. Bạn có thể đăng nhập."
+      : null;
+  });
+  const [error, setError] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
     return new URLSearchParams(window.location.search).get("error");
   });
 
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
-    setGoogleError(null);
+    setError(null);
 
-    const { error } = await signInWithGoogle();
+    const { error: googleError } = await signInWithGoogle();
 
-    if (error) {
-      console.error("[auth.google.start]", error);
-      setGoogleError(error.message);
+    if (googleError) {
+      console.error("[auth.google.start]", googleError);
+      setError(googleError.message);
       setIsGoogleLoading(false);
     }
   };
 
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setMessage(null);
+
+    if (!email.trim() || !password) {
+      setError("Vui lòng nhập email và mật khẩu.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const result = await signInWithEmail({ email, password });
+    setIsSubmitting(false);
+
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+
+    router.push("/");
+    router.refresh();
+  };
+
   return (
-    <div className="relative flex flex-1 w-full h-full items-center justify-center overflow-y-auto bg-[#f7f2ed] bg-[radial-gradient(ellipse_65%_55%_at_10%_15%,#fce8eb_0%,transparent_65%),radial-gradient(ellipse_55%_45%_at_90%_85%,#dcefd8_0%,transparent_65%),radial-gradient(ellipse_40%_40%_at_55%_50%,#f9f2ee_0%,transparent_70%)] px-4 py-4 before:pointer-events-none before:absolute before:left-[4%] before:top-[8%] before:h-[120px] before:w-[180px] before:rotate-[-20deg] before:rounded-[50%_0_50%_0] before:bg-[#f2a7b0] before:opacity-[0.18] before:content-[''] after:pointer-events-none after:absolute after:bottom-[8%] after:right-[5%] after:h-[90px] after:w-[140px] after:rotate-[15deg] after:rounded-[50%_0_50%_0] after:bg-[#a8c89a] after:opacity-[0.18] after:content-[''] max-[520px]:px-3.5">
+    <div className="relative flex h-full w-full flex-1 items-center justify-center overflow-y-auto bg-[#f7f2ed] bg-[radial-gradient(ellipse_65%_55%_at_10%_15%,#fce8eb_0%,transparent_65%),radial-gradient(ellipse_55%_45%_at_90%_85%,#dcefd8_0%,transparent_65%),radial-gradient(ellipse_40%_40%_at_55%_50%,#f9f2ee_0%,transparent_70%)] px-4 py-4 max-[520px]:px-3.5">
       <section
-        className="relative z-[1] w-full max-w-[370px] max-h-[calc(100vh-3rem)] overflow-y-auto rounded-[20px] border border-[#f0e6e0] bg-white px-8 pb-7 pt-8 text-center text-[#3a2520] shadow-[0_4px_32px_rgba(74,44,42,0.07)] max-[520px]:rounded-[14px] max-[520px]:px-[18px] max-[520px]:pb-[26px] max-[520px]:pt-7"
+        className="relative z-[1] w-full max-w-[370px] overflow-y-auto rounded-[20px] border border-[#f0e6e0] bg-white px-8 pb-7 pt-8 text-center text-[#3a2520] shadow-[0_4px_32px_rgba(74,44,42,0.07)] max-[520px]:rounded-[14px] max-[520px]:px-[18px]"
         aria-labelledby="login-title"
       >
         <h1
@@ -43,28 +75,20 @@ export default function LoginPage() {
         </h1>
 
         <p className="mb-5 mt-0 font-sans text-xs leading-normal text-[#b09090]">
-          Đăng nhập để tham gia cộng đồng dịu dàng{" "}
-          <span className="text-xs text-[#ff6f9a]" aria-hidden="true">
-            🌸
-          </span>
+          Đăng nhập để tham gia cộng đồng dịu dàng
         </p>
 
-        <div className="grid gap-2">
-          <button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={isGoogleLoading}
-            className="inline-flex min-h-9 w-full items-center justify-center gap-2.5 rounded-[10px] border-[1.5px] border-[#ead9d3] bg-white font-sans text-xs font-normal leading-none text-[#3a2520] transition duration-150 hover:-translate-y-px hover:border-[#f2a7b0] hover:bg-[#fdf6f0]"
-          >
-            <GoogleIcon />
-            <span>{isGoogleLoading ? "Đang chuyển hướng..." : "Tiếp tục với Google"}</span>
-          </button>
-        </div>
-        {googleError && (
-          <p className="mt-2 rounded-lg bg-[#fff1f2] px-3 py-2 text-left font-sans text-xs leading-relaxed text-[#be123c]">
-            {googleError}
-          </p>
-        )}
+        <button
+          type="button"
+          onClick={handleGoogleSignIn}
+          disabled={isGoogleLoading || isSubmitting}
+          className="inline-flex min-h-9 w-full items-center justify-center gap-2.5 rounded-[10px] border-[1.5px] border-[#ead9d3] bg-white font-sans text-xs font-normal leading-none text-[#3a2520] transition duration-150 hover:-translate-y-px hover:border-[#f2a7b0] hover:bg-[#fdf6f0] disabled:cursor-not-allowed disabled:opacity-70"
+        >
+          <GoogleIcon />
+          <span>
+            {isGoogleLoading ? "Đang chuyển hướng..." : "Tiếp tục với Google"}
+          </span>
+        </button>
 
         <div className="my-3 flex items-center gap-2.5">
           <span className="h-px flex-1 bg-[#ead9d3]" />
@@ -72,22 +96,16 @@ export default function LoginPage() {
           <span className="h-px flex-1 bg-[#ead9d3]" />
         </div>
 
-        <form className="text-left">
-          <div className="mb-3">
-            <label
-              className="mb-[5px] block font-sans text-xs font-medium leading-tight text-[#7a5a55]"
-              htmlFor="email"
-            >
-              Email
-            </label>
-            <input
-              id="email"
-              className="box-border block w-full min-w-0 rounded-lg border-[1.5px] border-[#2e1e1c] bg-[#2a1917] px-[13px] py-[9px] font-sans text-xs font-normal leading-tight text-[#fdf6f0] outline-none transition placeholder:text-[#6a4a48] focus:border-[#c9606e] focus:shadow-[0_0_0_3px_rgba(201,96,110,0.12)]"
-              type="email"
-              placeholder="email@example.com"
-              autoComplete="email"
-            />
-          </div>
+        <form className="text-left" onSubmit={handleSubmit}>
+          <InputField
+            id="email"
+            label="Email"
+            type="email"
+            value={email}
+            onChange={setEmail}
+            placeholder="email@example.com"
+            autoComplete="email"
+          />
 
           <div className="mb-3">
             <label
@@ -101,31 +119,31 @@ export default function LoginPage() {
                 id="password"
                 className="box-border block w-full min-w-0 rounded-lg border-[1.5px] border-[#2e1e1c] bg-[#2a1917] px-[13px] py-[9px] pr-10 font-sans text-xs font-normal leading-tight text-[#fdf6f0] outline-none transition placeholder:text-[#6a4a48] focus:border-[#c9606e] focus:shadow-[0_0_0_3px_rgba(201,96,110,0.12)]"
                 type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
                 placeholder="••••••••"
                 autoComplete="current-password"
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6a4a48] hover:text-[#c9606e] transition-colors"
+                onClick={() => setShowPassword((value) => !value)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6a4a48] transition-colors hover:text-[#c9606e]"
                 aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
               >
                 {showPassword ? <EyeIcon /> : <EyeOffIcon />}
               </button>
             </div>
-            <Link
-              href="/forgot-password"
-              className="mt-1.5 block text-right font-sans text-xs leading-tight text-[#c9606e] no-underline hover:text-[#e8768a] hover:underline"
-            >
-              Quên mật khẩu?
-            </Link>
           </div>
 
+          {message && <Notice tone="success">{message}</Notice>}
+          {error && <Notice tone="error">{error}</Notice>}
+
           <button
-            type="button"
-            className="w-full mb-3.5 mt-1 cursor-pointer rounded-[10px] border-0 bg-[#c9606e] px-4 py-2.5 font-sans text-sm font-medium leading-tight text-white transition duration-150 hover:-translate-y-px hover:bg-[#e8768a] hover:shadow-[0_4px_14px_rgba(201,96,110,0.28)]"
+            type="submit"
+            disabled={isSubmitting || isGoogleLoading}
+            className="mb-3.5 mt-1 w-full cursor-pointer rounded-[10px] border-0 bg-[#c9606e] px-4 py-2.5 font-sans text-sm font-medium leading-tight text-white transition duration-150 hover:-translate-y-px hover:bg-[#e8768a] hover:shadow-[0_4px_14px_rgba(201,96,110,0.28)] disabled:cursor-not-allowed disabled:opacity-70"
           >
-            Đăng nhập
+            {isSubmitting ? "Đang đăng nhập..." : "Đăng nhập"}
           </button>
         </form>
 
@@ -140,6 +158,58 @@ export default function LoginPage() {
         </p>
       </section>
     </div>
+  );
+}
+
+function InputField({
+  id,
+  label,
+  value,
+  onChange,
+  ...props
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange" | "value">) {
+  return (
+    <div className="mb-3">
+      <label
+        className="mb-[5px] block font-sans text-xs font-medium leading-tight text-[#7a5a55]"
+        htmlFor={id}
+      >
+        {label}
+      </label>
+      <input
+        id={id}
+        className="box-border block w-full min-w-0 rounded-lg border-[1.5px] border-[#2e1e1c] bg-[#2a1917] px-[13px] py-[9px] font-sans text-xs font-normal leading-tight text-[#fdf6f0] outline-none transition placeholder:text-[#6a4a48] focus:border-[#c9606e] focus:shadow-[0_0_0_3px_rgba(201,96,110,0.12)]"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        {...props}
+      />
+    </div>
+  );
+}
+
+function Notice({
+  children,
+  tone,
+}: {
+  children: React.ReactNode;
+  tone: "error" | "success";
+}) {
+  const className =
+    tone === "error"
+      ? "bg-[#fff1f2] text-[#be123c]"
+      : "bg-[#eef8f0] text-[#347354]";
+
+  return (
+    <p
+      className={`mb-3 rounded-lg px-3 py-2 text-left font-sans text-xs leading-relaxed ${className}`}
+    >
+      {children}
+    </p>
   );
 }
 
@@ -181,12 +251,7 @@ function EyeOffIcon() {
 
 function GoogleIcon() {
   return (
-    <svg
-      className="h-4 w-4 shrink-0"
-      viewBox="0 0 18 18"
-      aria-hidden="true"
-      focusable="false"
-    >
+    <svg className="h-4 w-4 shrink-0" viewBox="0 0 18 18" aria-hidden="true">
       <path
         d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 0 1-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615Z"
         fill="#4285F4"
