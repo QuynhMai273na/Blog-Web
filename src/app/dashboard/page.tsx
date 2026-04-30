@@ -56,13 +56,13 @@ export default function DashboardPage() {
 
   return (
     // Bỏ background tối và padding, cho khối này chiếm toàn màn hình (min-h-screen w-full)
-    <div className="flex h-[calc(100dvh-57px)] w-full overflow-hidden bg-cream">
+    <div className="flex h-full w-full overflow-hidden bg-cream">
       {/* 1. Sidebar (Cột trái nền tối, kéo dài full chiều cao) */}
       <aside className="flex h-full w-[240px] shrink-0 flex-col overflow-hidden bg-[#3e2829] pt-10  text-[#b09090]">
         {/* Logo */}
         <div className="mb-10 px-8">
           <h1 className="font-serif text-[22px] leading-tight">
-            <span className="text-[#d96e83] italic">Admin's Full Name</span>
+            <span className="text-[#d96e83] italic">Admin&apos;s Full Name</span>
           </h1>
         </div>
 
