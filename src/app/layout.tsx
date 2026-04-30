@@ -32,10 +32,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi" className={`${playfair.variable} ${montserrat.variable}`}>
-      <body className="overflow-x-hidden">
+      <body>
         <div className="web-container">
           <DynamicNavbar />
-          <main className="flex flex-1 flex-col animate-bloom">{children}</main>
+          <main className="flex min-h-0 flex-1 flex-col overflow-y-auto animate-bloom">
+            {children}
+          </main>
           <FooterGuard />
         </div>
       </body>
