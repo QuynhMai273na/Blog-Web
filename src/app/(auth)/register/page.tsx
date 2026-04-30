@@ -248,10 +248,32 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import { signInWithGoogle } from "@/services/auth.service";
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    return new URLSearchParams(window.location.search).get("error");
+  });
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    setGoogleError(null);
+
+    const { error } = await signInWithGoogle();
+
+    if (error) {
+      console.error("[auth.google.start]", error);
+      setGoogleError(error.message);
+      setIsGoogleLoading(false);
+    }
+  };
 
   return (
     <div className="relative flex flex-1 w-full items-center justify-center overflow-y-auto bg-[#f7f2ed] bg-[radial-gradient(ellipse_65%_55%_at_10%_15%,#fce8eb_0%,transparent_65%),radial-gradient(ellipse_55%_45%_at_90%_85%,#dcefd8_0%,transparent_65%),radial-gradient(ellipse_40%_40%_at_55%_50%,#f9f2ee_0%,transparent_70%)] px-4 py-3 before:pointer-events-none before:absolute before:left-[4%] before:top-[8%] before:h-[120px] before:w-[180px] before:rotate-[-20deg] before:rounded-[50%_0_50%_0] before:bg-[#f2a7b0] before:opacity-[0.18] before:content-[''] after:pointer-events-none after:absolute after:bottom-[8%] after:right-[5%] after:h-[90px] after:w-[140px] after:rotate-[15deg] after:rounded-[50%_0_50%_0] after:bg-[#a8c89a] after:opacity-[0.18] after:content-[''] max-[520px]:px-3.5">
@@ -277,12 +299,19 @@ export default function RegisterPage() {
         <div className="grid gap-2">
           <button
             type="button"
+            onClick={handleGoogleSignIn}
+            disabled={isGoogleLoading}
             className="inline-flex min-h-9 w-full items-center justify-center gap-2.5 rounded-[10px] border-[1.5px] border-[#ead9d3] bg-white font-sans text-xs font-normal leading-none text-[#3a2520] transition duration-150 hover:-translate-y-px hover:border-[#f2a7b0] hover:bg-[#fdf6f0]"
           >
             <GoogleIcon />
-            <span>Tiếp tục với Google</span>
+            <span>{isGoogleLoading ? "Đang chuyển hướng..." : "Tiếp tục với Google"}</span>
           </button>
         </div>
+        {googleError && (
+          <p className="mt-2 rounded-lg bg-[#fff1f2] px-3 py-2 text-left font-sans text-xs leading-relaxed text-[#be123c]">
+            {googleError}
+          </p>
+        )}
 
         <div className="my-3 flex items-center gap-2.5">
           <span className="h-px flex-1 bg-[#ead9d3]" />
