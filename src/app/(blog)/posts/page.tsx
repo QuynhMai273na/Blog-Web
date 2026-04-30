@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export default function PostsPage() {
   // Dữ liệu mẫu mô phỏng chính xác 5 bài viết trong ảnh thiết kế
   const posts = [
@@ -69,7 +67,7 @@ export default function PostsPage() {
   ];
 
   return (
-    <div className="w-full animate-bloom bg-white flex flex-col min-h-screen pb-4">
+    <div className="flex min-h-full w-full flex-col bg-white pb-4">
       {/* 1. Header Section (Nền hồng nhạt tràn viền) */}
       <section className="w-full bg-[#fff5f6] py-10 px-6 border-b border-[#f1ddd8]">
         <div className=" text-center mx-auto max-w-5xl mx-auto">
