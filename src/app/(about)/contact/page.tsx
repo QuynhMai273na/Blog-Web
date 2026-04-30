@@ -55,7 +55,7 @@ const topicOptions = topics.map((topic) => ({
 
 export default function ContactPage() {
   return (
-    <div className="relative isolate overflow-hidden px-4 py-10 md:px-6 md:py-14 animate-bloom">
+    <div className="relative isolate px-4 py-10 md:px-6 md:py-14 animate-bloom">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(252,228,230,0.72),transparent_35%),radial-gradient(circle_at_top_right,rgba(209,231,221,0.42),transparent_30%),linear-gradient(180deg,#fcfaf5_0%,#f8f5ed_48%,#fdfbf7_100%)]"
