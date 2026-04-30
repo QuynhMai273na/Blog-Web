@@ -15,6 +15,7 @@ type Profile = {
   avatar_url: string | null;
   email: string | null;
   auth_provider: string | null;
+  app_role: string | null;
   created_at: string | null;
 };
 
@@ -48,7 +49,9 @@ export default function ProfilePage() {
       if (data.user) {
         const { data: profileData, error } = await supabase
           .from("profiles")
-          .select("display_name, avatar_url, email, auth_provider, created_at")
+          .select(
+            "display_name, avatar_url, email, auth_provider, app_role, created_at",
+          )
           .eq("id", data.user.id)
           .maybeSingle();
 
@@ -215,6 +218,9 @@ export default function ProfilePage() {
               {displayName}
             </h1>
             <p className="truncate font-sans text-sm text-[#9b7f79]">{email}</p>
+            <p className="mt-1 inline-flex rounded-full border border-sage-100 bg-sage-50 px-2.5 py-1 font-sans text-[11px] font-semibold uppercase tracking-[0.08em] text-[#6c8f7a]">
+              role: {profile?.app_role ?? "user"}
+            </p>
           </div>
         </div>
 

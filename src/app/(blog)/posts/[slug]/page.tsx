@@ -1,24 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight, MessageCircleHeart } from "lucide-react";
+import { ArrowLeft, ArrowUpRight } from "lucide-react";
 import { notFound } from "next/navigation";
 
-import { getPostBySlug, getRelatedPosts, posts } from "@/lib/posts";
-import CommentForm from "./CommentForm";
+import {
+  getPostBySlug,
+  getRelatedPosts,
+} from "@/services/post.service";
+import { CommentSection } from "@/components/blog/CommentSection";
 
 type PostDetailPageProps = {
   params: Promise<{ slug: string }>;
 };
 
-export async function generateStaticParams() {
-  return posts.map((post) => ({ slug: post.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
 }: PostDetailPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlug(slug);
 
   if (!post) {
     return {
@@ -34,15 +35,16 @@ export async function generateMetadata({
 
 export default async function PostDetailPage({ params }: PostDetailPageProps) {
   const { slug } = await params;
-  const post = getPostBySlug(slug);
+  const post = await getPostBySlug(slug);
 
   if (!post) {
     notFound();
   }
 
-  const relatedPosts = getRelatedPosts(post.relatedSlugs);
+  const relatedPosts = await getRelatedPosts(post);
+
   return (
-    <div className="relative isolate pb-10 animate-bloom md:pb-14">
+    <div className="relative isolate animate-bloom pb-10 md:pb-14">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(252,228,230,0.72),transparent_34%),radial-gradient(circle_at_top_right,rgba(209,231,221,0.42),transparent_30%),linear-gradient(180deg,#fcfaf5_0%,#f8f1e7_48%,#fcfaf6_100%)]"
@@ -95,12 +97,18 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
             />
 
             <div className="relative">
-              <p className="text-[1.12rem] leading-[2.15] text-[#6a5555] md:text-[1.18rem]">
-                {post.intro}
-              </p>
+              {post.paragraphs.map((paragraph) => (
+                <p
+                  key={paragraph}
+                  className="mb-5 text-[1.12rem] leading-[2.15] text-[#6a5555] md:text-[1.18rem]"
+                >
+                  {paragraph}
+                </p>
+              ))}
 
               <blockquote className="mt-8 rounded-[24px] border-l-4 border-rose-300 bg-gradient-to-r from-rose-50 to-rose-50/35 px-6 py-5 font-serif text-[1.25rem] italic leading-[1.7] text-[#9a6570] md:text-[1.35rem]">
-                {post.quote}
+                Những thay đổi bền vững thường bắt đầu từ điều nhỏ, lặp lại đủ
+                lâu và đủ tử tế với mình.
               </blockquote>
 
               <div className="mt-10 space-y-10">
@@ -109,46 +117,14 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                     <h2 className="font-serif text-[2.2rem] font-semibold leading-[1.2] text-[#402f2f] md:text-[2.45rem]">
                       {section.heading}
                     </h2>
-                    <p className="mt-4 text-[1.08rem] leading-[2.05] text-[#6a5555] md:text-[1.12rem]">
+                    <p className="mt-4 whitespace-pre-line text-[1.08rem] leading-[2.05] text-[#6a5555] md:text-[1.12rem]">
                       {section.body}
                     </p>
                   </section>
                 ))}
               </div>
 
-              <section className="mt-8 rounded-[32px] border border-rose-100/80 bg-white/90 p-6 shadow-[0_14px_40px_rgba(214,156,161,0.08)] md:p-8">
-                <div className="flex items-center gap-3">
-                  <MessageCircleHeart className="h-5 w-5 text-rose-300" />
-                  <h2 className="font-serif text-[1.9rem] font-normal italic text-[#4a3737]">
-                    Bình luận ({post.commentCount})
-                  </h2>
-                </div>
-
-                <div className="mt-6 space-y-5">
-                  {post.comments.map((comment) => (
-                    <div
-                      key={`${post.slug}-${comment.author}`}
-                      className="border-b border-rose-100/80 pb-5 last:border-b-0 last:pb-0"
-                    >
-                      <div className="flex gap-4">
-                        <div className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-rose-100 bg-rose-50 text-lg shadow-sm">
-                          {comment.avatar}
-                        </div>
-                        <div>
-                          <p className="text-[15px] font-semibold text-[#5b4242]">
-                            {comment.author}
-                          </p>
-                          <p className="mt-1 text-[14px] italic leading-7 text-[#7b6464]">
-                            {comment.body}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <CommentForm />
-              </section>
+              <CommentSection postId={post.id} initialCount={post.commentCount} />
             </div>
           </article>
 
@@ -171,7 +147,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                 </p>
                 <button
                   type="button"
-                  className="mt-6 w-full rounded-[18px] border border-rose-100 bg-white px-4 py-3 text-[13px] font-medium text-[#e9dddd] shadow-sm"
+                  className="mt-6 w-full rounded-[18px] border border-rose-100 bg-white px-4 py-3 text-[13px] font-medium text-[#9a6570] shadow-sm"
                 >
                   Theo dõi
                 </button>
@@ -199,29 +175,15 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
             <div className="rounded-[30px] border border-white/90 bg-[#fffefd]/95 p-6 shadow-[0_24px_70px_rgba(45,62,47,0.1)] ring-1 ring-rose-100/70 backdrop-blur-md">
               <h3 className="border-b border-rose-100 pb-3 font-serif text-[1.55rem] font-normal text-[#3d2f2f]">
-                Tags
+                Chủ đề
               </h3>
-              <div className="mt-4 flex flex-wrap gap-3">
-                {post.tags.map((tag, index) => (
-                  <span
-                    key={tag}
-                    className={[
-                      "rounded-full border px-3 py-1 text-[12px] font-medium shadow-sm",
-                      index % 4 === 0 &&
-                        "border-sage-100 bg-sage-50 text-[#6c8f7a]",
-                      index % 4 === 1 &&
-                        "border-rose-100 bg-rose-50 text-[#c27d85]",
-                      index % 4 === 2 &&
-                        "border-sand-200 bg-[#fcf5ea] text-[#b78a54]",
-                      index % 4 === 3 &&
-                        "border-sage-100 bg-[#f2f8f4] text-[#7a9a84]",
-                    ]
-                      .filter(Boolean)
-                      .join(" ")}
-                  >
-                    {tag}
-                  </span>
-                ))}
+              <div className="mt-4">
+                <Link
+                  href={`/category/${post.categorySlug}`}
+                  className="rounded-full border border-sage-100 bg-sage-50 px-3 py-1 text-[12px] font-medium text-[#6c8f7a] shadow-sm"
+                >
+                  {post.categoryLabel}
+                </Link>
               </div>
             </div>
 

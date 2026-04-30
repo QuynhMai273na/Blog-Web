@@ -1,172 +1,174 @@
--- ========================================
---   BẢNG 1: profiles
---   Liên kết với auth.users của Supabase
--- ========================================
-create table profiles (
-  id          uuid references auth.users primary key,
-  email       text,
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE profiles (
+  id uuid REFERENCES auth.users PRIMARY KEY,
+  email text,
   display_name text,
-  avatar_url   text,
-  auth_provider text not null default 'email',
+  avatar_url text,
+  auth_provider text NOT NULL DEFAULT 'email',
+  app_role text NOT NULL DEFAULT 'user' CHECK (app_role IN ('user', 'author', 'admin')),
   password_hash text,
-  created_at   timestamptz default now()
+  created_at timestamptz DEFAULT now()
 );
 
--- ========================================
---   BẢNG 2: posts
---   Nội dung bài viết
--- ========================================
-create table posts (
-  id           uuid primary key default gen_random_uuid(),
-  title        text        not null,
-  slug         text        unique not null,
-  content      text,
-  category     text,
+CREATE TABLE categories (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  slug text UNIQUE NOT NULL,
+  description text,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE TABLE posts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  slug text UNIQUE NOT NULL,
+  content text,
   published_at timestamptz,
-  created_at   timestamptz default now()
+  created_at timestamptz DEFAULT now(),
+  category_id uuid REFERENCES categories(id) ON DELETE SET NULL,
+  thumbnail_url text,
+  summary text,
+  status text DEFAULT 'draft'
 );
 
--- ========================================
---   BẢNG 3: comments
---   Bình luận — liên kết posts + profiles
--- ========================================
-create table comments (
-  id         uuid primary key default gen_random_uuid(),
-  post_id    uuid references posts   on delete cascade,
-  user_id    uuid references profiles on delete cascade,
-  body       text        not null,
-  created_at timestamptz default now()
+CREATE TABLE comments (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id uuid REFERENCES posts ON DELETE CASCADE,
+  user_id uuid REFERENCES profiles ON DELETE CASCADE,
+  body text NOT NULL,
+  created_at timestamptz DEFAULT now(),
+  is_approved boolean DEFAULT false
 );
 
--- ========================================
---   BẢNG 4: subscribers
---   Email newsletter
--- ========================================
-create table subscribers (
-  id         uuid primary key default gen_random_uuid(),
-  email      text unique  not null,
-  confirmed  boolean      default false,
-  created_at timestamptz  default now()
+CREATE TABLE subscribers (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  email text UNIQUE NOT NULL,
+  confirmed boolean DEFAULT false,
+  created_at timestamptz DEFAULT now()
 );
 
--- Bật RLS cho các bảng cần bảo vệ
-alter table posts     enable row level security;
-alter table comments  enable row level security;
-alter table profiles  enable row level security;
-alter table subscribers enable row level security;
+CREATE TABLE contacts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  email text NOT NULL,
+  message text NOT NULL,
+  status text DEFAULT 'new',
+  created_at timestamptz DEFAULT now()
+);
 
--- ─── POSTS ────────────────────────────────────────
--- Ai cũng đọc được bài viết (public blog)
-create policy "public read posts"
-  on posts for select
-  using (true);
+ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subscribers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
 
--- ─── COMMENTS ─────────────────────────────────────
--- Ai cũng đọc được comment
-create policy "read all comments"
-  on comments for select
-  using (true);
+CREATE POLICY "public read posts"
+  ON posts FOR SELECT
+  USING (true);
 
--- Phải login mới comment được, và chỉ insert cho chính mình
-create policy "login to comment"
-  on comments for insert
-  with check (auth.uid() = user_id);
+CREATE POLICY "read all comments"
+  ON comments FOR SELECT
+  USING (true);
 
--- Chỉ xóa được comment của chính mình
-create policy "delete own comment"
-  on comments for delete
-  using (auth.uid() = user_id);
+CREATE POLICY "login to comment"
+  ON comments FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
 
--- ─── PROFILES ─────────────────────────────────────
--- Ai cũng xem được profile công khai
-create policy "public read profiles"
-  on profiles for select
-  using (true);
+CREATE POLICY "delete own comment"
+  ON comments FOR DELETE
+  USING (auth.uid() = user_id);
 
--- Chỉ tự update profile của mình
-create policy "update own profile"
-  on profiles for update
-  using (auth.uid() = id);
+CREATE POLICY "public read profiles"
+  ON profiles FOR SELECT
+  USING (true);
 
-create policy "insert own profile"
-  on profiles for insert
-  with check (auth.uid() = id);
+CREATE POLICY "update own profile"
+  ON profiles FOR UPDATE
+  USING (auth.uid() = id);
 
--- ─── SUBSCRIBERS ──────────────────────────────────
--- Chỉ insert (đăng ký), không cho đọc list email
-create policy "insert subscriber"
-  on subscribers for insert
-  with check (true);
+CREATE POLICY "insert own profile"
+  ON profiles FOR INSERT
+  WITH CHECK (auth.uid() = id);
 
+CREATE POLICY "insert subscriber"
+  ON subscribers FOR INSERT
+  WITH CHECK (true);
 
-create extension if not exists pgcrypto;
+CREATE POLICY "public read categories"
+  ON categories FOR SELECT
+  USING (true);
 
-create or replace function public.google_oauth_password_hash(
+CREATE POLICY "anyone can send contact"
+  ON contacts FOR INSERT
+  WITH CHECK (true);
+
+CREATE OR REPLACE FUNCTION public.google_oauth_password_hash(
   p_user_id uuid,
   p_email text
 )
-returns text
-language sql
-stable
-set search_path = public, extensions
-as $$
-  select 'oauth_google_sha256$' || encode(digest(p_user_id::text || ':' || coalesce(p_email, ''), 'sha256'), 'hex')
+RETURNS text
+LANGUAGE sql
+STABLE
+SET search_path = public, extensions
+AS $$
+  SELECT 'oauth_google_sha256$' || encode(digest(p_user_id::text || ':' || coalesce(p_email, ''), 'sha256'), 'hex')
 $$;
 
--- Khi user đăng ký, tự động tạo row trong profiles
-create or replace function handle_new_user()
-returns trigger as $$
-declare
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS trigger AS $$
+DECLARE
   v_provider text;
-begin
+BEGIN
   v_provider := coalesce(new.raw_app_meta_data->>'provider', 'email');
 
-  insert into public.profiles (id, email, display_name, avatar_url, auth_provider, password_hash)
-  values (
+  INSERT INTO public.profiles (id, email, display_name, avatar_url, auth_provider, password_hash)
+  VALUES (
     new.id,
     new.email,
     coalesce(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name'),
     new.raw_user_meta_data->>'avatar_url',
     v_provider,
-    case
-      when v_provider = 'google' then public.google_oauth_password_hash(new.id, new.email)
-      else null
-    end
+    CASE
+      WHEN v_provider = 'google' THEN public.google_oauth_password_hash(new.id, new.email)
+      ELSE NULL
+    END
   )
-  on conflict (id) do update set
+  ON CONFLICT (id) DO UPDATE SET
     email = excluded.email,
     display_name = coalesce(public.profiles.display_name, excluded.display_name),
     avatar_url = coalesce(excluded.avatar_url, public.profiles.avatar_url),
     auth_provider = excluded.auth_provider,
     password_hash = coalesce(public.profiles.password_hash, excluded.password_hash);
 
-  return new;
-end;
-$$ language plpgsql security definer set search_path = public;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
-create or replace function public.ensure_google_profile()
-returns void as $$
-declare
+CREATE OR REPLACE FUNCTION public.ensure_google_profile()
+RETURNS void AS $$
+DECLARE
   v_user auth.users%rowtype;
   v_provider text;
-begin
-  select *
-  into v_user
-  from auth.users
-  where id = auth.uid();
+BEGIN
+  SELECT *
+  INTO v_user
+  FROM auth.users
+  WHERE id = auth.uid();
 
-  if v_user.id is null then
-    raise exception 'No authenticated user found';
-  end if;
+  IF v_user.id IS NULL THEN
+    RAISE EXCEPTION 'No authenticated user found';
+  END IF;
 
   v_provider := coalesce(v_user.raw_app_meta_data->>'provider', '');
 
-  if v_provider <> 'google' then
-    raise exception 'Authenticated user provider is %, expected google', v_provider;
-  end if;
+  IF v_provider <> 'google' THEN
+    RAISE EXCEPTION 'Authenticated user provider is %, expected google', v_provider;
+  END IF;
 
-  insert into public.profiles (id, email, display_name, avatar_url, auth_provider, password_hash)
-  values (
+  INSERT INTO public.profiles (id, email, display_name, avatar_url, auth_provider, password_hash)
+  VALUES (
     v_user.id,
     v_user.email,
     coalesce(v_user.raw_user_meta_data->>'full_name', v_user.raw_user_meta_data->>'name'),
@@ -174,17 +176,17 @@ begin
     'google',
     public.google_oauth_password_hash(v_user.id, v_user.email)
   )
-  on conflict (id) do update set
+  ON CONFLICT (id) DO UPDATE SET
     email = excluded.email,
     display_name = coalesce(public.profiles.display_name, excluded.display_name),
     avatar_url = coalesce(excluded.avatar_url, public.profiles.avatar_url),
     auth_provider = 'google',
     password_hash = coalesce(public.profiles.password_hash, excluded.password_hash);
-end;
-$$ language plpgsql security definer set search_path = public, auth;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, auth;
 
-grant execute on function public.ensure_google_profile() to authenticated;
+GRANT EXECUTE ON FUNCTION public.ensure_google_profile() TO authenticated;
 
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute function handle_new_user();
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
