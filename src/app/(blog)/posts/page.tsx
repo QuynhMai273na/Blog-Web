@@ -1,3 +1,5 @@
+import CustomSelect from "@/components/ui/CustomSelect";
+
 export default function PostsPage() {
   // Dữ liệu mẫu mô phỏng chính xác 5 bài viết trong ảnh thiết kế
   const posts = [
@@ -12,7 +14,6 @@ export default function PostsPage() {
       icon: "🧘",
       imgBg: "bg-[#fce8eb]",
       tagStyle: "bg-sage-100 text-sage-500 border border-sage-300",
-      rowBg: "bg-white",
     },
     {
       title: "Cách mình tiết kiệm 30% thu nhập mà không cảm thấy thiếu thốn",
@@ -24,7 +25,6 @@ export default function PostsPage() {
       icon: "💰",
       imgBg: "bg-[#dcefd8]",
       tagStyle: "bg-sand-100 text-sand-500 border border-sand-300",
-      rowBg: "bg-white",
     },
     {
       title: "Khi con khóc mà mình không biết tại sao",
@@ -37,7 +37,6 @@ export default function PostsPage() {
       icon: "👶",
       imgBg: "bg-[#fce8eb]",
       tagStyle: "bg-rose-100 text-rose-500 border border-rose-400",
-      rowBg: "bg-[#fff5f6]", // Nền hồng nhạt nhấn mạnh toàn bộ dải ngang
     },
     {
       title: "Nhật ký 30 ngày uống đủ nước — điều gì đã thay đổi?",
@@ -50,7 +49,6 @@ export default function PostsPage() {
       icon: "🌿",
       imgBg: "bg-[#e5f0f5]",
       tagStyle: "bg-sage-100 text-sage-500 border border-sage-300",
-      rowBg: "bg-white",
     },
     {
       title: "Bài học mình học được từ việc thất bại nhiều lần",
@@ -62,8 +60,14 @@ export default function PostsPage() {
       icon: "🌻",
       imgBg: "bg-[#f9f2ee]",
       tagStyle: "bg-sand-100 text-sand-500 border border-sand-300",
-      rowBg: "bg-white",
     },
+  ];
+
+  const topicOptions = [
+    { label: "Tất cả chủ đề", value: "all" },
+    { label: "Parenting", value: "parenting" },
+    { label: "Yoga", value: "yoga" },
+    { label: "Tài chính", value: "finance" },
   ];
 
   return (
@@ -84,32 +88,15 @@ export default function PostsPage() {
       <section className="w-full border-b border-[#f1ddd8] py-4 px-6">
         <div className="max-w-5xl mx-auto flex gap-4 items-center">
           {/* Nút màu đen xám (Placeholder cho icon bộ lọc/tìm kiếm) */}
-          <div className="w-12 h-12 bg-[#333333] rounded-xl flex-shrink-0 shadow-sm" />
+          {/* <div className="w-12 h-12 bg-[#333333] rounded-xl flex-shrink-0 shadow-sm" /> */}
 
-          {/* Dropdown Select bo tròn hai đầu */}
-          <div className="relative flex-1 max-w-full">
-            <select className="w-full appearance-none rounded-full border border-[#f1ddd8] bg-white py-3 pl-6 pr-12 text-sm text-sage-800 outline-none hover:border-[#d96e83] transition-colors cursor-pointer">
-              <option>Tất cả chủ đề</option>
-              <option>Parenting</option>
-              <option>Yoga</option>
-              <option>Tài chính</option>
-            </select>
-            {/* Custom Arrow Down */}
-            <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-sage-800">
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
-            </div>
-          </div>
+          <CustomSelect
+            name="topic"
+            options={topicOptions}
+            className="flex-1 max-w-full"
+            buttonClassName="rounded-full border-[#f1ddd8] py-3 pl-6 pr-5 text-sm font-normal text-sage-800 shadow-none hover:border-[#d96e83] focus:border-[#d96e83] focus:ring-[#f1ddd8]"
+            panelClassName="rounded-2xl border-[#f1ddd8]"
+          />
         </div>
       </section>
 
@@ -118,12 +105,12 @@ export default function PostsPage() {
         {posts.map((post, idx) => (
           <div
             key={idx}
-            className={`w-full border-b border-[#f1ddd8] transition-colors hover:bg-[#fffcfd] ${post.rowBg}`}
+            className={`w-full border-b border-[#f1ddd8] transition-colors bg-white hover:bg-rose-50`}
           >
             <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col md:flex-row gap-10 md:items-center">
               {/* Ảnh Thumbnail bo tròn góc */}
               <div
-                className={`w-full md:w-[160px] h-[110px] flex-shrink-0 rounded-[14px] flex items-center justify-center text-[40px] shadow-sm ${post.imgBg} border border-rose-200 transition-transform hover:scale-105 cursor-pointer`}
+                className={`w-full md:w-[160px] h-[110px] flex-shrink-0 rounded-[14px] flex items-center justify-center text-[40px] shadow-sm ${post.imgBg} border border-rose-200/65 transition-transform hover:scale-105 cursor-pointer`}
               >
                 <span className="transition-transform duration-300 hover:scale-110 cursor-pointer">
                   {post.icon}
@@ -156,7 +143,7 @@ export default function PostsPage() {
       </section>
 
       {/* 4. Phân trang (Pagination - Nền kem nhạt dưới đáy) */}
-      <section className="w-full bg-[#fdfcf8] py-10">
+      <section className="w-full bg-[#fdfcf8] py-6">
         <div className="flex justify-center items-center gap-3">
           <button className="px-5 py-2.5 rounded-full border border-[#f1ddd8] bg-white text-sage-800 text-sm font-medium hover:bg-[#fff5f6] hover:text-[#d96e83] transition-colors shadow-sm">
             ← Trước

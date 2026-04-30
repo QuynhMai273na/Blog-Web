@@ -140,14 +140,14 @@ export default function HomePage() {
       {/* ──────────────────────────────
           NEWSLETTER — dark section matching screenshot
       ────────────────────────────── */}
-      <section className="bg-light_cream py-12 px-5 text-center mb-8">
+      <section className="bg-light_cream py-12 px-6 text-center">
         {/* CTA */}
-        <div className="text-center mt-10">
+        <div className="text-center mb-12 mt-2">
           <Link href="/posts" className="btn-primary">
             Xem tất cả bài viết
           </Link>
         </div>
-        <h2 className="font-serif text-3xl tracking-[1px] italic text-sage-800/90 font-bold mb-2">
+        <h2 className="font-serif text-3xl tracking-[1px] italic text-sage-800/90 font-bold my-2">
           {/* <p className="mx-auto mb-5 max-w-[700px] font-serif text-[14px] font-normal italic tracking-[2px] text-[#6c8f7a]"> */}
           Cùng mình hành trình mỗi tuần nhé
         </h2>

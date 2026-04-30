@@ -50,7 +50,6 @@ export default async function CategoryPage({
       icon: "🌸",
       imgBg: "bg-[#fce8eb]",
       tagStyle: "bg-sage-100 text-sage-500 border border-sage-300",
-      rowBg: "bg-white",
     },
     {
       title: `Hành trình khám phá những điều mới mẻ từ ${categoryName}`,
@@ -63,7 +62,6 @@ export default async function CategoryPage({
       icon: "🌿",
       imgBg: "bg-[#dcefd8]",
       tagStyle: "bg-sand-100 text-sand-500 border border-sand-300",
-      rowBg: "bg-white",
     },
     {
       title: "Ghi chép nhỏ: Bài học đắt giá nhất mình từng học được",
@@ -76,7 +74,6 @@ export default async function CategoryPage({
       icon: "🌻",
       imgBg: "bg-[#f9f2ee]",
       tagStyle: "bg-rose-100 text-rose-500 border border-rose-400",
-      rowBg: "bg-[#fff5f6]", // Nền hồng nhạt nhấn mạnh
     },
   ];
 
@@ -104,12 +101,12 @@ export default async function CategoryPage({
             {fakePosts.map((post, idx) => (
               <div
                 key={idx}
-                className={`w-full border-b border-[#f1ddd8] transition-colors hover:bg-[#fffcfd] ${post.rowBg}`}
+                className={`w-full border-b border-[#f1ddd8] transition-colors bg-white hover:bg-rose-50`}
               >
                 <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col md:flex-row gap-10 md:items-center">
                   {/* Ảnh Thumbnail bo tròn góc */}
                   <div
-                    className={`w-full md:w-[160px] h-[110px] flex-shrink-0 rounded-[14px] flex items-center justify-center text-[40px] shadow-sm ${post.imgBg} border border-rose-200 transition-transform hover:scale-105 cursor-pointer`}
+                    className={`w-full md:w-[160px] h-[110px] flex-shrink-0 rounded-[14px] flex items-center justify-center text-4xl shadow-sm ${post.imgBg} border border-rose-200/65 transition-transform hover:scale-105 cursor-pointer`}
                   >
                     <span className="transition-transform duration-300 hover:scale-110 cursor-pointer">
                       {post.icon}
@@ -143,7 +140,7 @@ export default async function CategoryPage({
           </section>
 
           {/* 3. Phân trang (Chỉ hiển thị nếu có bài viết) */}
-          <section className="w-full bg-[#fdfcf8] py-10">
+          <section className="w-full bg-[#fdfcf8] py-6">
             <div className="flex justify-center items-center gap-3">
               <button className="px-5 py-2.5 rounded-full border border-[#f1ddd8] bg-white text-sage-800 text-sm font-medium hover:bg-[#fff5f6] hover:text-[#d96e83] transition-colors shadow-sm">
                 ← Trước
