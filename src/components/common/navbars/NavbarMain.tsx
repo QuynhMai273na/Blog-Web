@@ -1,6 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 export default function NavbarMain() {
+  const pathname = usePathname();
+
   const menuItems = [
     { name: "Trang chủ", href: "/" },
     { name: "Parenting", href: "/category/parenting" },
@@ -21,16 +26,27 @@ export default function NavbarMain() {
         </Link>
 
         <ul className="hidden items-center gap-6 font-sans text-base font-medium tracking-[0.01em] text-[#667568] md:flex">
-          {menuItems.map((item) => (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                className="transition-colors hover:text-[#c85f70]"
-              >
-                {item.name}
-              </Link>
-            </li>
-          ))}
+          {menuItems.map((item) => {
+            // Logic kiểm tra trang hiện tại:
+            // Nếu là trang chủ ("/") thì phải khớp tuyệt đối. Nếu là các trang danh mục thì dùng startsWith để bao trọn trang con.
+            const isActive =
+              item.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(item.href);
+
+            return (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className={`transition-colors hover:text-[#c85f70] ${
+                    isActive ? "text-[#c85f70] font-semibold" : ""
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
         <Link

@@ -19,23 +19,21 @@ const config: Config = {
           100: "#FCE4E6", // Nền cho Tag "Parenting"
           200: "#D69CA1", // Màu chữ tiêu đề hồng
           300: "#E5B0B0",
+          400: "#c78a8a",
         },
         // Tông Vàng Pastel cho Tài chính cá nhân
         sand: {
           100: "#F9F1E6", // Nền cho Tag "Tài chính"
           200: "#E6D5B8",
         },
-        cream: "#FDFCF8", // Màu nền giấy cũ toàn web
-        // Thêm màu gradient cho Footer từ hình ảnh
-        "footer-pink": "#d69ca1", // Màu hồng bên trái dải màu
-        "footer-green": "#94c2b1", // Màu xanh bên phải dải màu
+        cream: "#f8f5ed", // Màu nền giấy cũ toàn web
       },
       fontFamily: {
         serif: ["var(--font-playfair)", "serif"], // Tiêu đề bay bổng
         sans: ["var(--font-montserrat)", "sans-serif"], // Nội dung dễ đọc
       },
       fontSize: {
-        xs: ["0.875rem", { lineHeight: "1.5" }],
+        xs: ["0.8rem", { lineHeight: "1.5" }],
         sm: ["0.875rem", { lineHeight: "1.5" }],
         base: ["1rem", { lineHeight: "1.6" }],
         lg: ["1.125rem", { lineHeight: "1.5" }],

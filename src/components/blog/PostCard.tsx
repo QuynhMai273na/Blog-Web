@@ -1,4 +1,3 @@
-// src/components/blog/PostCard.tsx
 import React from "react";
 
 interface PostCardProps {
@@ -7,7 +6,6 @@ interface PostCardProps {
   category: "Yoga" | "Tài chính" | "Parenting";
   date: string;
   readTime: string;
-  horizontal?: boolean; // Hỗ trợ bố cục ngang cho bài viết nổi bật
 }
 
 const PostCard: React.FC<PostCardProps> = ({
@@ -16,37 +14,71 @@ const PostCard: React.FC<PostCardProps> = ({
   category,
   date,
   readTime,
-  horizontal,
 }) => {
-  const tagClass =
-    category === "Yoga"
-      ? "tag-yoga"
-      : category === "Tài chính"
-        ? "tag-finance"
-        : "tag-parenting";
-  const emoji =
-    category === "Yoga" ? "🧘" : category === "Tài chính" ? "💰" : "👶";
+  // Cấu hình màu sắc, icon và họa tiết góc cho từng Category
+  const styleMap = {
+    Yoga: {
+      bg: "bg-[#fce8eb]",
+      tag: "bg-[#f1f8f5] text-[#6b9b84] border-[#d1e7dd]",
+      emoji: "🧘",
+      decor: "🌸",
+      decorColor: "text-[#f2a7b0]",
+    },
+    "Tài chính": {
+      bg: "bg-[#dcefd8]",
+      tag: "bg-[#fdf6f0] text-[#c98e55] border-[#f1ddd8]",
+      emoji: "💰",
+      decor: "🌿",
+      decorColor: "text-[#a8c89a]",
+    },
+    Parenting: {
+      bg: "bg-[#f9f2ee]",
+      tag: "bg-[#fce8eb] text-[#d96e83] border-[#f2a7b0]",
+      emoji: "👶",
+      decor: "🌷",
+      decorColor: "text-[#d96e83]",
+    },
+  };
+
+  const currentStyle = styleMap[category];
 
   return (
-    <div
-      className={`post-card bg-white p-6 rounded-4xl border border-rose-100/30 shadow-sm hover:shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1 ${horizontal ? "flex gap-6 items-center" : "flex flex-col"}`}
-    >
-      {/* Placeholder cho hình ảnh bài viết */}
+    <div className="group bg-white rounded-[24px] overflow-hidden border border-[#f0e6e0] shadow-[0_4px_24px_rgba(74,44,42,0.04)] hover:shadow-[0_8px_32px_rgba(74,44,42,0.08)] hover:-translate-y-1 transition-all duration-300 flex flex-col">
+      {/* Nửa trên: Hình ảnh/Mảng màu pastel tràn viền */}
       <div
-        className={`aspect-video rounded-3xl mb-4 bg-gray-50 flex items-center justify-center text-4xl border border-rose-50 ${horizontal ? "w-48 mb-0 flex-shrink-0" : "w-full"}`}
+        className={`relative h-[180px] w-full flex items-center justify-center ${currentStyle.bg}`}
       >
-        {emoji}
+        <span className="text-6xl drop-shadow-md transition-transform duration-500 group-hover:scale-110">
+          {currentStyle.emoji}
+        </span>
+        {/* Họa tiết nhỏ ở góc dưới phải */}
+        <span
+          className={`absolute bottom-3 right-4 text-2xl opacity-60 ${currentStyle.decorColor}`}
+        >
+          {currentStyle.decor}
+        </span>
       </div>
-      <div className="flex-1">
-        <span className={`tag ${tagClass}`}>{category}</span>
-        <h3 className="font-serif text-xl mt-3 mb-2 text-sage-800 leading-snug">
+
+      {/* Nửa dưới: Nội dung text */}
+      <div className="p-6 flex-1 flex flex-col">
+        <div className="mb-4">
+          <span
+            className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border ${currentStyle.tag}`}
+          >
+            {category}
+          </span>
+        </div>
+
+        <h3 className="font-serif text-lg font-bold text-[#3a2520] leading-snug mb-3 line-clamp-2">
           {title}
         </h3>
-        <p className="text-sage-800/60 text-sm line-clamp-2 mb-4 font-light leading-relaxed">
+
+        <p className="text-[#7a5a55] text-sm leading-relaxed font-light line-clamp-2 mb-6 flex-1">
           {excerpt}
         </p>
-        <div className="text-xs uppercase tracking-[0.2em] text-sage-800/40 font-bold">
-          {date} • {readTime}
+
+        <div className="text-[10px] font-medium uppercase tracking-[0.1em] text-[#b09090] mt-auto">
+          {date} <span className="mx-1">•</span> {readTime}
         </div>
       </div>
     </div>
