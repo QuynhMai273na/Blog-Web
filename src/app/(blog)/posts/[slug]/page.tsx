@@ -42,7 +42,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
   const relatedPosts = getRelatedPosts(post.relatedSlugs);
   return (
-    <div className="relative isolate overflow-hidden pb-10 animate-bloom md:pb-14">
+    <div className="relative isolate pb-10 animate-bloom md:pb-14">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(252,228,230,0.72),transparent_34%),radial-gradient(circle_at_top_right,rgba(209,231,221,0.42),transparent_30%),linear-gradient(180deg,#fcfaf5_0%,#f8f1e7_48%,#fcfaf6_100%)]"

@@ -322,7 +322,7 @@ export default function WritePage() {
   }
 
   return (
-    <div className={`${cormorant.variable} relative isolate overflow-hidden`}>
+    <div className={`${cormorant.variable} relative isolate min-h-full`}>
       {/* Background */}
       <div
         aria-hidden
@@ -330,7 +330,7 @@ export default function WritePage() {
       />
 
       {/* ── page header ── */}
-      <header className="relative mb-6 flex items-start justify-between rounded-[34px] border border-white/80 bg-white/80 px-6 py-8 shadow-[0_24px_70px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
+      <header className="relative flex items-start justify-between bg-white/80 px-6 py-8 shadow-[0_24px_70px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[0.32em] text-sage-300">
             Dashboard / Editor
@@ -357,7 +357,7 @@ export default function WritePage() {
       <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-6">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
           {/* ── Left: writing area ── */}
-          <div className="space-y-5 h-[calc(100vh-120px)] overflow-y-auto pr-2">
+          <div className="space-y-5 pr-2">
             {/* Toolbar */}
             <div className="sticky top-0 z-30 rounded-[26px] border border-white/90 bg-white/95 px-4 py-3 shadow-[0_8px_30px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
               <div className="flex flex-wrap gap-2">
