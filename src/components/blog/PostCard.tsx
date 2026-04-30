@@ -1,55 +1,111 @@
-// src/components/blog/PostCard.tsx
+import Link from "next/link";
 import React from "react";
 
+import type { PostCategory } from "@/lib/posts";
+
 interface PostCardProps {
+  slug: string;
   title: string;
   excerpt: string;
-  category: "Yoga" | "Tài chính" | "Parenting";
+  category: PostCategory;
+  categoryLabel?: string;
   date: string;
   readTime: string;
-  horizontal?: boolean; // Hỗ trợ bố cục ngang cho bài viết nổi bật
+  horizontal?: boolean;
 }
 
 const PostCard: React.FC<PostCardProps> = ({
+  slug,
   title,
   excerpt,
   category,
+  categoryLabel,
   date,
   readTime,
-  horizontal,
+  horizontal = false,
 }) => {
-  const tagClass =
-    category === "Yoga"
-      ? "tag-yoga"
-      : category === "Tài chính"
-        ? "tag-finance"
-        : "tag-parenting";
-  const emoji =
-    category === "Yoga" ? "🧘" : category === "Tài chính" ? "💰" : "👶";
+  const styleMap = {
+    Yoga: {
+      bg: "bg-[#fce8eb]",
+      tag: "bg-[#f1f8f5] text-[#6b9b84] border-[#d1e7dd]",
+      emoji: "🧘",
+      decor: "🌸",
+      decorColor: "text-[#f2a7b0]",
+    },
+    "Tài chính": {
+      bg: "bg-[#dcefd8]",
+      tag: "bg-[#fdf6f0] text-[#c98e55] border-[#f1ddd8]",
+      emoji: "💰",
+      decor: "🌿",
+      decorColor: "text-[#a8c89a]",
+    },
+    Parenting: {
+      bg: "bg-[#f9f2ee]",
+      tag: "bg-[#fce8eb] text-[#d96e83] border-[#f2a7b0]",
+      emoji: "👶",
+      decor: "🌷",
+      decorColor: "text-[#d96e83]",
+    },
+  };
+
+  const currentStyle = styleMap[category];
+  const tagText = categoryLabel ?? category;
 
   return (
-    <div
-      className={`post-card bg-white p-6 rounded-4xl border border-rose-100/30 shadow-sm hover:shadow-md transition-all duration-500 hover:shadow-xl hover:-translate-y-1 ${horizontal ? "flex gap-6 items-center" : "flex flex-col"}`}
+    <Link
+      href={`/posts/${slug}`}
+      className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
     >
-      {/* Placeholder cho hình ảnh bài viết */}
-      <div
-        className={`aspect-video rounded-3xl mb-4 bg-gray-50 flex items-center justify-center text-4xl border border-rose-50 ${horizontal ? "w-48 mb-0 flex-shrink-0" : "w-full"}`}
+      <article
+        className={[
+          "group overflow-hidden rounded-[24px] border border-[#f0e6e0] bg-white shadow-[0_4px_24px_rgba(74,44,42,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(74,44,42,0.08)]",
+          horizontal ? "flex flex-col md:flex-row" : "flex flex-col",
+        ].join(" ")}
       >
-        {emoji}
-      </div>
-      <div className="flex-1">
-        <span className={`tag ${tagClass}`}>{category}</span>
-        <h3 className="font-serif text-xl mt-3 mb-2 text-sage-800 leading-snug">
-          {title}
-        </h3>
-        <p className="text-sage-800/60 text-sm line-clamp-2 mb-4 font-light leading-relaxed">
-          {excerpt}
-        </p>
-        <div className="text-xs uppercase tracking-[0.2em] text-sage-800/40 font-bold">
-          {date} • {readTime}
+        <div
+          className={[
+            `relative flex items-center justify-center ${currentStyle.bg}`,
+            horizontal ? "h-[180px] w-full md:h-auto md:w-[240px]" : "h-[180px] w-full",
+          ].join(" ")}
+        >
+          <span className="text-6xl drop-shadow-md transition-transform duration-500 group-hover:scale-110">
+            {currentStyle.emoji}
+          </span>
+          <span
+            className={`absolute bottom-3 right-4 text-2xl opacity-60 ${currentStyle.decorColor}`}
+          >
+            {currentStyle.decor}
+          </span>
         </div>
-      </div>
-    </div>
+
+        <div className="flex flex-1 flex-col p-6">
+          <div className="mb-4">
+            <span
+              className={`rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${currentStyle.tag}`}
+            >
+              {tagText}
+            </span>
+          </div>
+
+          <h3 className="mb-3 font-serif text-lg font-bold leading-snug text-[#3a2520] line-clamp-2">
+            {title}
+          </h3>
+
+          <p
+            className={[
+              "mb-6 flex-1 text-sm font-light leading-relaxed text-[#7a5a55]",
+              horizontal ? "line-clamp-3" : "line-clamp-2",
+            ].join(" ")}
+          >
+            {excerpt}
+          </p>
+
+          <div className="mt-auto text-[10px] font-medium uppercase tracking-[0.1em] text-[#b09090]">
+            {date} <span className="mx-1">•</span> {readTime}
+          </div>
+        </div>
+      </article>
+    </Link>
   );
 };
 

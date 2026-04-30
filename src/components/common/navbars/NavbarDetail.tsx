@@ -1,11 +1,7 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react"; // Cài đặt: npm install lucide-react
 
 export default function NavbarDetail({ category }: { category?: string }) {
-  const router = useRouter();
-
   return (
     <>
       <div className="fixed left-0 top-0 z-50 w-full border-b border-rose-100 bg-white/90 shadow-sm backdrop-blur-md">
@@ -23,12 +19,12 @@ export default function NavbarDetail({ category }: { category?: string }) {
 
             {/* Nút Quay lại & Links */}
             <div className="hidden items-center gap-6 font-sans text-base font-medium tracking-[0.01em] text-[#667568] md:flex">
-              <button
+              {/* <button
                 onClick={() => router.back()}
                 className="flex items-center gap-2 hover:text-sage-300 transition-colors"
               >
                 <ArrowLeft size={18} /> Quay lại
-              </button>
+              </button> */}
               <Link href="/category/parenting" className="hover:text-rose-200">
                 Parenting
               </Link>
@@ -45,18 +41,9 @@ export default function NavbarDetail({ category }: { category?: string }) {
             Đăng nhập
           </button>
         </div>
-
-        {/* Bottom Section: Category Tag (Mô phỏng ảnh image_c12039) */}
-        {category && (
-          <div className="flex w-full justify-center pb-3">
-            <span className="bg-sage-100 text-sage-800 px-4 py-1 rounded-full text-sm font-medium">
-              {category}
-            </span>
-          </div>
-        )}
       </div>
       <div
-        className={category ? "h-[93px] shrink-0" : "h-[57px] shrink-0"}
+        className={category ? "h-[50px] shrink-0" : "h-[50px] shrink-0"}
         aria-hidden="true"
       />
     </>

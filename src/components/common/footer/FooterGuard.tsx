@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Footer from "@/components/common/footer/Footer";
 
-const hiddenFooterRoutes = ["/login", "/register", "/forgot-password"];
+const hiddenFooterRoutes = ["/login", "/register", "/forgot-password", "/dashboard"];
 
 export default function FooterGuard() {
   const pathname = usePathname();

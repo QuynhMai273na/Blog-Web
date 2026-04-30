@@ -25,18 +25,26 @@ export default function NavbarSub() {
         </Link>
 
         <ul className="hidden items-center gap-6 font-sans text-base font-medium tracking-[0.01em] text-[#667568] md:flex">
-          {links.map((link) => (
-            <li key={link.href}>
-              <Link
-                href={link.href}
-                className={`transition-colors hover:text-[#c85f70] ${
-                  pathname === link.href ? "text-[#c85f70]" : ""
-                }`}
-              >
-                {link.name}
-              </Link>
-            </li>
-          ))}
+          {links.map((link) => {
+            // Sửa logic so sánh để tránh mất màu ở trang con
+            const isActive =
+              link.href === "/"
+                ? pathname === "/"
+                : pathname.startsWith(link.href);
+
+            return (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className={`transition-colors hover:text-[#c85f70] ${
+                    isActive ? "text-[#c85f70] font-semibold" : ""
+                  }`}
+                >
+                  {link.name}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
 
         <Link

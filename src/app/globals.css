@@ -10,12 +10,16 @@
 
 @layer base {
   html {
-    @apply overflow-x-hidden bg-cream text-base;
+    @apply h-full overflow-hidden bg-cream text-base;
   }
 
   body {
-    @apply min-h-screen overflow-x-hidden bg-cream font-sans text-base text-sage-800 antialiased;
+    @apply h-full overflow-hidden bg-cream font-sans text-base text-sage-800 antialiased;
     line-height: 1.6;
+  }
+
+  #__next {
+    @apply h-full;
   }
 
   h1,
@@ -58,7 +62,7 @@
 
 @layer components {
   .web-container {
-    @apply mx-auto flex min-h-screen w-full max-w-none flex-col bg-cream;
+    @apply mx-auto flex h-dvh w-full max-w-none flex-col overflow-hidden bg-cream;
   }
 
   .tag {
@@ -86,7 +90,7 @@
   }
 
   .btn-primary {
-    @apply rounded-full bg-sage-300 px-8 py-3 text-base font-medium text-white shadow-sm transition-all duration-300 hover:bg-sage-800;
+    @apply rounded-full bg-sage-300 px-8 py-3 text-base font-medium text-white shadow-sm transition-all duration-300 hover:bg-sage-500;
   }
 }
 
