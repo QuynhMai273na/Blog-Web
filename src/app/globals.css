@@ -1,0 +1,106 @@
+/* src/app/globals.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #fdfcf8;
+  --foreground: #2d3e2f;
+}
+
+@layer base {
+  html {
+    @apply overflow-x-hidden bg-cream text-base;
+  }
+
+  body {
+    @apply min-h-screen overflow-x-hidden bg-cream font-sans text-base text-sage-800 antialiased;
+    line-height: 1.6;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-serif font-bold tracking-tight;
+  }
+
+  h1 {
+    @apply text-6xl;
+  }
+
+  h2 {
+    @apply text-5xl;
+  }
+
+  h3 {
+    @apply text-4xl;
+  }
+
+  h4 {
+    @apply text-3xl;
+  }
+
+  h5 {
+    @apply text-2xl;
+  }
+
+  h6 {
+    @apply text-xl;
+  }
+
+  p {
+    @apply text-base;
+  }
+}
+
+@layer components {
+  .web-container {
+    @apply mx-auto flex min-h-screen w-full max-w-none flex-col bg-cream;
+  }
+
+  .tag {
+    @apply rounded-full px-3 py-1 text-xs font-medium uppercase tracking-wider;
+  }
+
+  .tag-yoga {
+    @apply bg-sage-100 text-sage-800;
+  }
+
+  .tag-finance {
+    @apply bg-sand-100 text-amber-800;
+  }
+
+  .tag-parenting {
+    @apply bg-rose-100 text-rose-200;
+  }
+
+  .input-field {
+    @apply w-full rounded-xl border px-4 py-3 text-base focus:outline-none focus:ring-1 focus:ring-sage-300;
+  }
+
+  .input-dark {
+    @apply border-transparent bg-[#333333] text-white;
+  }
+
+  .btn-primary {
+    @apply rounded-full bg-sage-300 px-8 py-3 text-base font-medium text-white shadow-sm transition-all duration-300 hover:bg-sage-800;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-bloom {
+  animation: fadeIn 1s ease-out forwards;
+}
