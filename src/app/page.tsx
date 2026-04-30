@@ -189,7 +189,7 @@ export default function HomePage() {
         {CATEGORIES.map((cat, i) => (
           <Link
             key={cat}
-            href={i === 0 ? "/blog" : `/blog?cat=${encodeURIComponent(cat)}`}
+            href={i === 0 ? "/posts" : `/posts?cat=${encodeURIComponent(cat)}`}
             className={[
               "rounded-full border text-[12px] font-sans px-4 py-1.5 transition-all",
               i === 0
@@ -235,7 +235,7 @@ export default function HomePage() {
 
         {/* CTA */}
         <div className="text-center mt-10">
-          <Link href="/blog" className="btn-primary">
+          <Link href="/posts" className="btn-primary">
             Xem tất cả bài viết
           </Link>
         </div>
