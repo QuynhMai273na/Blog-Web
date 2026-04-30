@@ -98,24 +98,6 @@ const toggleMeta: Array<{
 
 const averageWordsPerMinute = 220;
 
-const activeFormats = useEditorState({
-  editor,
-  selector: (ctx) => ({
-    bold:         ctx.editor?.isActive("bold") ?? false,
-    italic:       ctx.editor?.isActive("italic") ?? false,
-    underline:    ctx.editor?.isActive("underline") ?? false,
-    h2:           ctx.editor?.isActive("heading", { level: 2 }) ?? false,
-    h3:           ctx.editor?.isActive("heading", { level: 3 }) ?? false,
-    blockquote:   ctx.editor?.isActive("blockquote") ?? false,
-    bulletList:   ctx.editor?.isActive("bulletList") ?? false,
-    orderedList:  ctx.editor?.isActive("orderedList") ?? false,
-    link:         ctx.editor?.isActive("link") ?? false,
-    alignLeft:    ctx.editor?.isActive({ textAlign: "left" }) ?? false,
-    alignCenter:  ctx.editor?.isActive({ textAlign: "center" }) ?? false,
-    alignRight:   ctx.editor?.isActive({ textAlign: "right" }) ?? false,
-  }),
-});
-
 function ToolbarBtn({
   label,
   icon: Icon,
@@ -210,7 +192,6 @@ export default function WritePage() {
 
   const editor = useEditor({
     immediatelyRender: false,
-
     extensions: [
       StarterKit,
       UnderlineExt,
@@ -223,16 +204,35 @@ export default function WritePage() {
     editorProps: {
       attributes: {
         class:
-          "outline-none min-h-[520px] px-2 py-1 text-[1.08rem] leading-[2.05] text-white font-serif",
+          "outline-none min-h-[520px] px-2 py-1 text-[1.08rem] leading-[2.05] font-serif",
       },
     },
+  });
+
+  const activeFormats = useEditorState({
+    editor,
+    selector: (ctx) => ({
+      bold: ctx.editor?.isActive("bold") ?? false,
+      italic: ctx.editor?.isActive("italic") ?? false,
+      underline: ctx.editor?.isActive("underline") ?? false,
+      h2: ctx.editor?.isActive("heading", { level: 2 }) ?? false,
+      h3: ctx.editor?.isActive("heading", { level: 3 }) ?? false,
+      blockquote: ctx.editor?.isActive("blockquote") ?? false,
+      bulletList: ctx.editor?.isActive("bulletList") ?? false,
+      orderedList: ctx.editor?.isActive("orderedList") ?? false,
+      link: ctx.editor?.isActive("link") ?? false,
+      alignLeft: ctx.editor?.isActive({ textAlign: "left" }) ?? false,
+      alignCenter: ctx.editor?.isActive({ textAlign: "center" }) ?? false,
+      alignRight: ctx.editor?.isActive({ textAlign: "right" }) ?? false,
+    }),
   });
 
   const wordCount = useMemo(
     () => {
       if (!editor) return 0;
       return editor.getText().trim().split(/\s+/).filter(Boolean).length;
-    }, // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [editor?.state],
   );
 
@@ -331,26 +331,22 @@ export default function WritePage() {
 
       {/* ── page header ── */}
       <header className="relative mb-6 flex items-start justify-between rounded-[34px] border border-white/80 bg-white/80 px-6 py-8 shadow-[0_24px_70px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
-        {/* LEFT TOP */}
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[0.32em] text-sage-300">
             Dashboard / Editor
           </p>
         </div>
 
-        {/* CENTER */}
         <div className="absolute left-1/2 top-6 w-full max-w-2xl -translate-x-1/2 text-center px-4">
           <h1 className="mt-3 font-serif text-[2.3rem] font-normal text-[#3d2f2f] md:text-[3.2rem]">
             Viết bài mới
           </h1>
-
           <p className="mt-2 text-sm text-[#7f6d6d]">
             Một trang soạn thảo đầy đủ cho tiêu đề, excerpt, nội dung, lịch
             đăng...
           </p>
         </div>
 
-        {/* RIGHT */}
         <div className="rounded-[24px] border border-sage-100 bg-sage-50/80 px-5 py-4 text-sm text-[#64806f] shadow-sm">
           <p className="font-medium">Chỉnh sửa lần cuối</p>
           <p className="mt-1 text-[13px] text-[#7c9283]">DD/MM/YYYY • Time</p>
@@ -361,15 +357,14 @@ export default function WritePage() {
       <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-6">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
           {/* ── Left: writing area ── */}
-          {/* <div className="space-y-5"> */}
           <div className="space-y-5 h-[calc(100vh-120px)] overflow-y-auto pr-2">
-            {/* Toolbar — sticky header của cột trái */}
+            {/* Toolbar */}
             <div className="sticky top-0 z-30 rounded-[26px] border border-white/90 bg-white/95 px-4 py-3 shadow-[0_8px_30px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
               <div className="flex flex-wrap gap-2">
                 <ToolbarBtn
                   label="H2"
                   icon={Heading2}
-                  active={editor?.isActive("heading", { level: 2 }) ?? false}
+                  active={activeFormats?.h2 ?? false}
                   onClick={() =>
                     editor?.chain().focus().toggleHeading({ level: 2 }).run()
                   }
@@ -377,7 +372,7 @@ export default function WritePage() {
                 <ToolbarBtn
                   label="H3"
                   icon={Heading3}
-                  active={editor?.isActive("heading", { level: 3 }) ?? false}
+                  active={activeFormats?.h3 ?? false}
                   onClick={() =>
                     editor?.chain().focus().toggleHeading({ level: 3 }).run()
                   }
@@ -386,19 +381,19 @@ export default function WritePage() {
                 <ToolbarBtn
                   label="Đậm"
                   icon={Bold}
-                  active={editor?.isActive("bold") ?? false}
+                  active={activeFormats?.bold ?? false}
                   onClick={() => editor?.chain().focus().toggleBold().run()}
                 />
                 <ToolbarBtn
                   label="Nghiêng"
                   icon={Italic}
-                  active={editor?.isActive("italic") ?? false}
+                  active={activeFormats?.italic ?? false}
                   onClick={() => editor?.chain().focus().toggleItalic().run()}
                 />
                 <ToolbarBtn
                   label="Gạch"
                   icon={UnderlineIcon}
-                  active={editor?.isActive("underline") ?? false}
+                  active={activeFormats?.underline ?? false}
                   onClick={() =>
                     editor?.chain().focus().toggleUnderline().run()
                   }
@@ -407,7 +402,7 @@ export default function WritePage() {
                 <ToolbarBtn
                   label="Trái"
                   icon={AlignLeft}
-                  active={editor?.isActive({ textAlign: "left" }) ?? false}
+                  active={activeFormats?.alignLeft ?? false}
                   onClick={() =>
                     editor?.chain().focus().setTextAlign("left").run()
                   }
@@ -415,7 +410,7 @@ export default function WritePage() {
                 <ToolbarBtn
                   label="Giữa"
                   icon={AlignCenter}
-                  active={editor?.isActive({ textAlign: "center" }) ?? false}
+                  active={activeFormats?.alignCenter ?? false}
                   onClick={() =>
                     editor?.chain().focus().setTextAlign("center").run()
                   }
@@ -423,7 +418,7 @@ export default function WritePage() {
                 <ToolbarBtn
                   label="Phải"
                   icon={AlignRight}
-                  active={editor?.isActive({ textAlign: "right" }) ?? false}
+                  active={activeFormats?.alignRight ?? false}
                   onClick={() =>
                     editor?.chain().focus().setTextAlign("right").run()
                   }
@@ -432,7 +427,7 @@ export default function WritePage() {
                 <ToolbarBtn
                   label="Quote"
                   icon={Quote}
-                  active={editor?.isActive("blockquote") ?? false}
+                  active={activeFormats?.blockquote ?? false}
                   onClick={() =>
                     editor?.chain().focus().toggleBlockquote().run()
                   }
@@ -440,7 +435,7 @@ export default function WritePage() {
                 <ToolbarBtn
                   label="List"
                   icon={List}
-                  active={editor?.isActive("bulletList") ?? false}
+                  active={activeFormats?.bulletList ?? false}
                   onClick={() =>
                     editor?.chain().focus().toggleBulletList().run()
                   }
@@ -448,7 +443,7 @@ export default function WritePage() {
                 <ToolbarBtn
                   label="Số"
                   icon={ListOrdered}
-                  active={editor?.isActive("orderedList") ?? false}
+                  active={activeFormats?.orderedList ?? false}
                   onClick={() =>
                     editor?.chain().focus().toggleOrderedList().run()
                   }
@@ -462,11 +457,12 @@ export default function WritePage() {
                 <ToolbarBtn
                   label="Link"
                   icon={LinkIcon}
-                  active={editor?.isActive("link") ?? false}
+                  active={activeFormats?.link ?? false}
                   onClick={insertLinkUrl}
                 />
               </div>
             </div>
+
             {/* Card chính — Title + Excerpt + Editor */}
             <div className="overflow-hidden rounded-[34px] border border-white/90 bg-[#fffefd]/95 shadow-[0_24px_70px_rgba(45,62,47,0.1)] ring-1 ring-rose-100/70 backdrop-blur-md">
               {/* Title */}
@@ -487,7 +483,6 @@ export default function WritePage() {
                 />
               </div>
 
-              {/* Divider */}
               <div className="mx-7 my-6 h-px bg-gradient-to-r from-rose-100 via-rose-200/60 to-transparent md:mx-10" />
 
               {/* Excerpt */}
@@ -507,11 +502,9 @@ export default function WritePage() {
                 />
               </div>
 
-              {/* Divider */}
               <div className="mx-7 my-6 h-px bg-gradient-to-r from-rose-100 via-rose-200/60 to-transparent md:mx-10" />
 
-              {/* Tiptap editor — dark section bên dưới */}
-              {/* <div className="bg-white"> */}
+              {/* Tiptap editor */}
               <div className="bg-[#fdfcfb] border-t border-rose-100/60">
                 <div className="flex items-center justify-between px-7 py-4 md:px-10">
                   <div>
@@ -531,34 +524,34 @@ export default function WritePage() {
                 </div>
                 <div className="px-7 pb-7 md:px-10 md:pb-10">
                   <div
-                    className="rounded-[20px] border border-rose-100 bg-white shadow-[inset_0_2px_8px_rgba(180,140,140,0.06),0_2px_12px_rgba(180,140,140,0.08)] px-6 py-5 min-h-[520px] cursor-text"
+                    className="rounded-[20px] border border-rose-100 bg-white shadow-[inset_0_2px_8px_rgba(180,140,140,0.06),0_2px_12px_rgba(180,140,140,0.08)] px-6 py-5 min-h-[520px] cursor-text transition-shadow duration-200 hover:shadow-[inset_0_2px_8px_rgba(180,140,140,0.08),0_6px_20px_rgba(180,140,140,0.14)] focus-within:border-rose-200 focus-within:shadow-[inset_0_2px_8px_rgba(180,140,140,0.08),0_6px_24px_rgba(214,156,161,0.18)]"
                     onClick={() => editor?.commands.focus()}
                   >
                     <EditorContent
                       editor={editor}
                       className="
-                      [&_.ProseMirror]:outline-none
-                      [&_.ProseMirror]:min-h-[520px]
-                      [&_.ProseMirror]:text-[#3a312f]
-                      [&_.ProseMirror]:leading-[2]
-                      [&_.ProseMirror_p]:mb-4
-                      [&_.ProseMirror_p]:text-[1.05rem]
-                      [&_.ProseMirror_h2]:font-serif
-                      [&_.ProseMirror_h2]:text-[1.6rem]
-                      [&_.ProseMirror_h2]:font-semibold
-                      [&_.ProseMirror_h2]:text-[#3a312f]
-                      [&_.ProseMirror_h2]:mt-8
-                      [&_.ProseMirror_h2]:mb-3
-                      [&_.ProseMirror_blockquote]:border-l-[3px]
-                      [&_.ProseMirror_blockquote]:border-rose-300
-                      [&_.ProseMirror_blockquote]:pl-5
-                      [&_.ProseMirror_blockquote]:italic
-                      [&_.ProseMirror_blockquote]:text-[#7a6666]
-                      [&_.ProseMirror_blockquote]:my-5
-                      [&_.ProseMirror_a]:text-rose-400
-                      [&_.ProseMirror_a]:underline
-                      [&_.ProseMirror_.is-editor-empty:first-child::before]:text-[#c4b5b1]
-                    "
+                        [&_.ProseMirror]:outline-none
+                        [&_.ProseMirror]:min-h-[480px]
+                        [&_.ProseMirror]:text-[#3a312f]
+                        [&_.ProseMirror]:leading-[2]
+                        [&_.ProseMirror_p]:mb-4
+                        [&_.ProseMirror_p]:text-[1.05rem]
+                        [&_.ProseMirror_h2]:font-serif
+                        [&_.ProseMirror_h2]:text-[1.6rem]
+                        [&_.ProseMirror_h2]:font-semibold
+                        [&_.ProseMirror_h2]:text-[#3a312f]
+                        [&_.ProseMirror_h2]:mt-8
+                        [&_.ProseMirror_h2]:mb-3
+                        [&_.ProseMirror_blockquote]:border-l-[3px]
+                        [&_.ProseMirror_blockquote]:border-rose-300
+                        [&_.ProseMirror_blockquote]:pl-5
+                        [&_.ProseMirror_blockquote]:italic
+                        [&_.ProseMirror_blockquote]:text-[#7a6666]
+                        [&_.ProseMirror_blockquote]:my-5
+                        [&_.ProseMirror_a]:text-rose-400
+                        [&_.ProseMirror_a]:underline
+                        [&_.ProseMirror_.is-editor-empty:first-child::before]:text-[#c4b5b1]
+                      "
                     />
                   </div>
                 </div>
@@ -576,7 +569,6 @@ export default function WritePage() {
 
           {/* ── Right sidebar ── */}
           <aside className="space-y-3">
-            {/* Publish status */}
             <SidebarSection
               id="publish"
               icon={CalendarDays}
@@ -635,7 +627,6 @@ export default function WritePage() {
               )}
             </SidebarSection>
 
-            {/* Cover image */}
             <SidebarSection
               id="cover"
               icon={ImageIcon}
@@ -695,7 +686,6 @@ export default function WritePage() {
               )}
             </SidebarSection>
 
-            {/* Category & Tags */}
             <SidebarSection
               id="category"
               icon={Type}
@@ -766,7 +756,6 @@ export default function WritePage() {
               </div>
             </SidebarSection>
 
-            {/* SEO */}
             <SidebarSection
               id="seo"
               icon={Search}
@@ -825,7 +814,6 @@ export default function WritePage() {
               </div>
             </SidebarSection>
 
-            {/* Options / Toggles */}
             <SidebarSection
               id="options"
               icon={Check}

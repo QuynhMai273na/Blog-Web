@@ -257,7 +257,7 @@ export default function ContactPage() {
                   <textarea
                     rows={6}
                     placeholder="Chia sẻ điều bạn muốn nói với mình..."
-                    className="input-field min-h-40 rounded-[24px] border-rose-200 bg-white px-5 py-4 text-[15px] text-[#5a4545] shadow-[0_8px_24px_rgba(214,156,161,0.08)] placeholder:font-serif placeholder:text-[15px] placeholder:italic placeholder:text-[#a88e8e] focus:border-rose-300 focus:ring-rose-200"
+                    className="input-field min-h-40 resize-none overflow-hidden rounded-[24px] border-rose-200 bg-white px-5 py-4 text-[15px] text-[#5a4545] shadow-[0_8px_24px_rgba(214,156,161,0.08)] placeholder:font-serif placeholder:text-[15px] placeholder:italic placeholder:text-[#a88e8e] focus:border-rose-300 focus:ring-rose-200"
                   />
                 </label>
 
