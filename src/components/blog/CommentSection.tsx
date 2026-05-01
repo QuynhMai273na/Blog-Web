@@ -1,6 +1,7 @@
 "use client";
-// components/CommentSection.tsx
-import { useEffect, useMemo, useState } from "react";
+
+import Link from "next/link";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
@@ -9,148 +10,216 @@ type Comment = {
   user_id: string;
   body: string;
   created_at: string;
-  profiles: { display_name: string; avatar_url: string } | null;
+  profiles: { display_name: string | null; avatar_url: string | null } | null;
 };
 
-export function CommentSection({ postId }: { postId: string }) {
+export function CommentSection({
+  postId,
+  initialCount,
+}: {
+  postId: string;
+  initialCount: number;
+}) {
   const supabase = useMemo(() => createClient(), []);
   const [comments, setComments] = useState<Comment[]>([]);
   const [body, setBody] = useState("");
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load user hiện tại
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, [supabase]);
 
-  // Load comments ban đầu
   useEffect(() => {
     supabase
       .from("comments")
-      .select("*, profiles(display_name, avatar_url)")
+      .select("id,user_id,body,created_at,profiles(display_name,avatar_url)")
       .eq("post_id", postId)
-      .order("created_at")
-      .then(({ data }) => setComments(data ?? []));
+      .order("created_at", { ascending: true })
+      .then(({ data, error: loadError }) => {
+        if (loadError) {
+          console.error("[comments.load]", loadError);
+          setError("Không thể tải bình luận.");
+        } else {
+          setComments(((data ?? []) as CommentRow[]).map(toComment));
+        }
+        setIsLoading(false);
+      });
   }, [postId, supabase]);
 
-  // Realtime — comment mới hiện ngay không cần reload
-  useEffect(() => {
-    const channel = supabase
-      .channel(`comments-${postId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "comments",
-          filter: `post_id=eq.${postId}`,
-        },
-        async (payload) => {
-          // Fetch thêm profile info cho comment mới
-          const { data } = await supabase
-            .from("comments")
-            .select("*, profiles(display_name, avatar_url)")
-            .eq("id", payload.new.id)
-            .single();
-          if (data) setComments((prev) => [...prev, data]);
-        },
-      )
-      .subscribe();
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [postId, supabase]);
-
-  // Gửi comment
-  async function handleSubmit() {
     if (!body.trim() || !user) return;
-    setLoading(true);
-    await supabase.from("comments").insert({
-      post_id: postId,
-      user_id: user.id,
-      body: body.trim(),
-    });
+
+    setIsSubmitting(true);
+    const { data, error: insertError } = await supabase
+      .from("comments")
+      .insert({
+        post_id: postId,
+        user_id: user.id,
+        body: body.trim(),
+        is_approved: true,
+      })
+      .select("id,user_id,body,created_at,profiles(display_name,avatar_url)")
+      .single();
+    setIsSubmitting(false);
+
+    if (insertError) {
+      console.error("[comments.insert]", insertError);
+      setError("Không thể gửi bình luận. Vui lòng thử lại.");
+      return;
+    }
+
+    setComments((current) => [...current, toComment(data as CommentRow)]);
     setBody("");
-    setLoading(false);
   }
 
-  // Xóa comment (RLS tự chặn nếu không phải owner)
   async function handleDelete(commentId: string) {
-    await supabase.from("comments").delete().eq("id", commentId);
-    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    const { error: deleteError } = await supabase
+      .from("comments")
+      .delete()
+      .eq("id", commentId);
+
+    if (deleteError) {
+      console.error("[comments.delete]", deleteError);
+      setError("Không thể xóa bình luận này.");
+      return;
+    }
+
+    setComments((current) => current.filter((comment) => comment.id !== commentId));
   }
+
+  const count = isLoading ? initialCount : comments.length;
 
   return (
-    <section>
-      <h2 className="text-xl font-semibold mb-6 text-[#5C3347] italic">
-        Bình luận ({comments.length})
-      </h2>
+    <section className="mt-8 rounded-[32px] border border-rose-100/80 bg-white/90 p-6 shadow-[0_14px_40px_rgba(214,156,161,0.08)] md:p-8">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-serif text-[1.9rem] font-normal italic text-[#4a3737]">
+          Bình luận ({count})
+        </h2>
+      </div>
 
-      {/* Danh sách comment */}
-      <ul className="space-y-6 mb-8">
-        {comments.map((c) => (
-          <li
-            key={c.id}
-            className="flex gap-3 p-4 rounded-2xl bg-white border border-[#F2D4DC]"
-          >
-            {c.profiles?.avatar_url && (
-              <img
-                src={c.profiles.avatar_url}
-                className="w-9 h-9 rounded-full ring-2 ring-[#F2D4DC]"
-                alt=""
-              />
-            )}
-            <div className="flex-1">
-              <p className="font-medium text-sm text-[#5C3347]">
-                {c.profiles?.display_name ?? "Ẩn danh"}
-              </p>
-              <p className="text-[#5C3347] mt-1 leading-relaxed">{c.body}</p>
-              <p className="text-xs text-[#B8A0AC] mt-1">
-                {new Date(c.created_at).toLocaleString("vi-VN")}
-              </p>
+      {error && (
+        <p className="mt-4 rounded-lg bg-[#fff1f2] px-3 py-2 text-sm text-[#be123c]">
+          {error}
+        </p>
+      )}
+
+      <div className="mt-6 space-y-5">
+        {isLoading ? (
+          <p className="text-sm italic text-[#8a7474]">Đang tải bình luận...</p>
+        ) : comments.length > 0 ? (
+          comments.map((comment) => (
+            <div
+              key={comment.id}
+              className="border-b border-rose-100/80 pb-5 last:border-b-0 last:pb-0"
+            >
+              <div className="flex gap-4">
+                <div className="flex h-11 w-11 flex-none items-center justify-center overflow-hidden rounded-full border border-rose-100 bg-rose-50 text-lg font-semibold text-[#c85f70] shadow-sm">
+                  {comment.profiles?.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={comment.profiles.avatar_url}
+                      alt={comment.profiles.display_name ?? "User"}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    getInitial(comment.profiles?.display_name)
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-[15px] font-semibold text-[#5b4242]">
+                      {comment.profiles?.display_name ?? "Ẩn danh"}
+                    </p>
+                    {user?.id === comment.user_id && (
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(comment.id)}
+                        className="text-xs font-medium text-[#be123c] transition hover:text-[#e11d48]"
+                      >
+                        Xóa
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-1 text-[14px] italic leading-7 text-[#7b6464]">
+                    {comment.body}
+                  </p>
+                  <p className="mt-1 text-xs text-[#b09090]">
+                    {new Date(comment.created_at).toLocaleString("vi-VN")}
+                  </p>
+                </div>
+              </div>
             </div>
-            {user && c.user_id === user.id && (
-              <button
-                onClick={() => handleDelete(c.id)}
-                className="text-[#D4748E] hover:text-[#C25E7A] text-xs self-start transition-colors"
-              >
-                Xóa
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
+          ))
+        ) : (
+          <p className="text-sm italic text-[#8a7474]">
+            Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ.
+          </p>
+        )}
+      </div>
 
-      {/* Form gửi comment */}
       {user ? (
-        <div className="space-y-3 p-4 rounded-2xl bg-white border border-[#F2D4DC]">
+        <form onSubmit={handleSubmit} className="mt-6">
           <textarea
             value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Viết bình luận..."
-            className="w-full border border-[#E8B8C8] rounded-xl p-3 text-sm resize-none h-24 bg-[#FFF8F5] text-[#5C3347] placeholder:text-[#C8A0B0] focus:outline-none focus:ring-2 focus:ring-[#D4748E]/30"
+            onChange={(event) => setBody(event.target.value)}
+            placeholder="Chia sẻ cảm nghĩ của bạn..."
+            className="input-field min-h-36 rounded-[24px] border-rose-200 bg-[#2f2d2b] px-5 py-4 font-serif text-[15px] italic text-white shadow-[0_8px_24px_rgba(45,62,47,0.16)] placeholder:text-[#9f9592] focus:border-rose-300 focus:ring-rose-200"
           />
           <button
-            onClick={handleSubmit}
-            disabled={loading || !body.trim()}
-            className="px-6 py-2.5 bg-[#C25E7A] hover:bg-[#D4748E] text-white rounded-full text-sm font-medium transition-colors disabled:opacity-50"
+            type="submit"
+            disabled={isSubmitting || !body.trim()}
+            className={`mt-4 inline-flex items-center rounded-full px-6 py-2.5 text-[13px] font-medium shadow-sm transition-all duration-300 ${
+              body.trim()
+                ? "border border-rose-200 bg-white text-[#7b6262] hover:-translate-y-0.5 hover:border-rose-300 hover:text-rose-400 hover:shadow-[0_6px_16px_rgba(214,156,161,0.2)]"
+                : "cursor-not-allowed border border-rose-100/50 bg-white/40 text-[#c5b4b4]"
+            }`}
           >
-            {loading ? "Đang gửi..." : "Gửi bình luận"}
+            {isSubmitting ? "Đang gửi..." : "Gửi bình luận"}
           </button>
-        </div>
+        </form>
       ) : (
-        <p className="text-[#8A6070] text-sm">
-          <a
-            href="/auth/login"
-            className="text-[#C25E7A] underline hover:text-[#D4748E]"
+        <p className="mt-6 text-sm text-[#8a6070]">
+          <Link
+            href="/login"
+            className="font-semibold text-[#c25e7a] underline hover:text-[#d4748e]"
           >
             Đăng nhập
-          </a>{" "}
-          để bình luận
+          </Link>{" "}
+          để bình luận.
         </p>
       )}
     </section>
   );
+}
+
+function getInitial(name?: string | null) {
+  return name?.trim().charAt(0).toUpperCase() || "U";
+}
+
+type CommentRow = Omit<Comment, "profiles"> & {
+  profiles:
+    | { display_name: string | null; avatar_url: string | null }
+    | Array<{ display_name: string | null; avatar_url: string | null }>
+    | null;
+};
+
+function toComment(row: CommentRow): Comment {
+  return {
+    ...row,
+    profiles: Array.isArray(row.profiles) ? row.profiles[0] ?? null : row.profiles,
+  };
 }

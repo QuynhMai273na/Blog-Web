@@ -1,7 +1,7 @@
 import Link from "next/link";
 import React from "react";
 
-import type { PostCategory } from "@/lib/posts";
+import type { PostCategory } from "@/services/post.service";
 
 interface PostCardProps {
   slug: string;
@@ -14,6 +14,46 @@ interface PostCardProps {
   horizontal?: boolean;
 }
 
+const styleMap: Record<
+  PostCategory,
+  {
+    bg: string;
+    tag: string;
+    emoji: string;
+    decor: string;
+    decorColor: string;
+  }
+> = {
+  Yoga: {
+    bg: "bg-[#fce8eb]",
+    tag: "bg-[#f1f8f5] text-[#6b9b84] border-[#d1e7dd]",
+    emoji: "🧘",
+    decor: "🌸",
+    decorColor: "text-[#f2a7b0]",
+  },
+  "Tài chính": {
+    bg: "bg-[#dcefd8]",
+    tag: "bg-[#fdf6f0] text-[#c98e55] border-[#f1ddd8]",
+    emoji: "💰",
+    decor: "🌿",
+    decorColor: "text-[#a8c89a]",
+  },
+  Parenting: {
+    bg: "bg-[#f9f2ee]",
+    tag: "bg-[#fce8eb] text-[#d96e83] border-[#f2a7b0]",
+    emoji: "👶",
+    decor: "🌷",
+    decorColor: "text-[#d96e83]",
+  },
+  "Cuộc sống": {
+    bg: "bg-[#fcf5ea]",
+    tag: "bg-[#fcf5ea] text-[#b78a54] border-[#f1ddd8]",
+    emoji: "🌻",
+    decor: "🌿",
+    decorColor: "text-[#b78a54]",
+  },
+};
+
 const PostCard: React.FC<PostCardProps> = ({
   slug,
   title,
@@ -24,30 +64,6 @@ const PostCard: React.FC<PostCardProps> = ({
   readTime,
   horizontal = false,
 }) => {
-  const styleMap = {
-    Yoga: {
-      bg: "bg-[#fce8eb]",
-      tag: "bg-[#f1f8f5] text-[#6b9b84] border-[#d1e7dd]",
-      emoji: "🧘",
-      decor: "🌸",
-      decorColor: "text-[#f2a7b0]",
-    },
-    "Tài chính": {
-      bg: "bg-[#dcefd8]",
-      tag: "bg-[#fdf6f0] text-[#c98e55] border-[#f1ddd8]",
-      emoji: "💰",
-      decor: "🌿",
-      decorColor: "text-[#a8c89a]",
-    },
-    Parenting: {
-      bg: "bg-[#f9f2ee]",
-      tag: "bg-[#fce8eb] text-[#d96e83] border-[#f2a7b0]",
-      emoji: "👶",
-      decor: "🌷",
-      decorColor: "text-[#d96e83]",
-    },
-  };
-
   const currentStyle = styleMap[category];
   const tagText = categoryLabel ?? category;
 
@@ -65,7 +81,9 @@ const PostCard: React.FC<PostCardProps> = ({
         <div
           className={[
             `relative flex items-center justify-center ${currentStyle.bg}`,
-            horizontal ? "h-[180px] w-full md:h-auto md:w-[240px]" : "h-[180px] w-full",
+            horizontal
+              ? "h-[180px] w-full md:h-auto md:w-[240px]"
+              : "h-[180px] w-full",
           ].join(" ")}
         >
           <span className="text-6xl drop-shadow-md transition-transform duration-500 group-hover:scale-110">
@@ -87,7 +105,7 @@ const PostCard: React.FC<PostCardProps> = ({
             </span>
           </div>
 
-          <h3 className="mb-3 font-serif text-lg font-bold leading-snug text-[#3a2520] line-clamp-2">
+          <h3 className="mb-3 line-clamp-2 font-serif text-lg font-bold leading-snug text-[#3a2520]">
             {title}
           </h3>
 
