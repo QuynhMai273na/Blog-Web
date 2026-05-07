@@ -106,7 +106,7 @@ export function CommentSection({
   return (
     <section className="mt-8 rounded-[32px] border border-rose-100/80 bg-white/90 p-6 shadow-[0_14px_40px_rgba(214,156,161,0.08)] md:p-8">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-serif text-[1.9rem] font-normal italic text-[#4a3737]">
+        <h2 className="font-serif text-[1.9rem] font-normal  text-[#4a3737]">
           Bình luận ({count})
         </h2>
       </div>
@@ -119,7 +119,7 @@ export function CommentSection({
 
       <div className="mt-6 space-y-5">
         {isLoading ? (
-          <p className="text-sm italic text-[#8a7474]">Đang tải bình luận...</p>
+          <p className="text-sm  text-[#8a7474]">Đang tải bình luận...</p>
         ) : comments.length > 0 ? (
           comments.map((comment) => (
             <div
@@ -154,7 +154,7 @@ export function CommentSection({
                       </button>
                     )}
                   </div>
-                  <p className="mt-1 text-[14px] italic leading-7 text-[#7b6464]">
+                  <p className="mt-1 text-[14px]  leading-7 text-[#7b6464]">
                     {comment.body}
                   </p>
                   <p className="mt-1 text-xs text-[#b09090]">
@@ -165,7 +165,7 @@ export function CommentSection({
             </div>
           ))
         ) : (
-          <p className="text-sm italic text-[#8a7474]">
+          <p className="text-sm  text-[#8a7474]">
             Chưa có bình luận nào. Hãy là người đầu tiên chia sẻ.
           </p>
         )}
@@ -177,7 +177,7 @@ export function CommentSection({
             value={body}
             onChange={(event) => setBody(event.target.value)}
             placeholder="Chia sẻ cảm nghĩ của bạn..."
-            className="input-field min-h-36 rounded-[24px] border-rose-200 bg-[#2f2d2b] px-5 py-4 font-serif text-[15px] italic text-white shadow-[0_8px_24px_rgba(45,62,47,0.16)] placeholder:text-[#9f9592] focus:border-rose-300 focus:ring-rose-200"
+            className="input-field min-h-36 rounded-[24px] border-rose-200 bg-[#2f2d2b] px-5 py-4 font-serif text-[15px]  text-white shadow-[0_8px_24px_rgba(45,62,47,0.16)] placeholder:text-[#9f9592] focus:border-rose-300 focus:ring-rose-200"
           />
           <button
             type="submit"

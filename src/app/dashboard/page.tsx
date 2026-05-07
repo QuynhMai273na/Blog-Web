@@ -54,7 +54,7 @@ export default async function DashboardPage() {
       <aside className="flex h-full w-[240px] shrink-0 flex-col overflow-hidden bg-[#3e2829] pt-10 text-[#b09090]">
         <div className="mb-10 px-8">
           <h1 className="font-serif text-[22px] leading-tight">
-            <span className="text-[#d96e83] italic">Admin</span>
+            <span className="text-[#d96e83] ">Admin</span>
           </h1>
         </div>
 
@@ -106,7 +106,7 @@ export default async function DashboardPage() {
                 {stat.value}
               </div>
               <p
-                className={`text-[11px] italic ${
+                className={`text-[11px]  ${
                   stat.type === "success" ? "text-[#6b9b84]" : "text-[#d96e83]"
                 }`}
               >

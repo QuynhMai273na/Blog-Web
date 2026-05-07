@@ -102,12 +102,12 @@ export default function ContactPage() {
 
       <section className="mx-auto max-w-6xl">
         <div className="mb-8 text-center animate-bloom [animation-delay:120ms] [animation-fill-mode:both]">
-          <p className="mb-3 font-serif text-[13px] italic tracking-[0.2em] text-sage-800/55">
+          <p className="mb-3 font-serif text-[13px]  tracking-[0.2em] text-sage-800/55">
             — contact & kind conversations —
           </p>
           <h1 className="mx-auto max-w-3xl font-serif text-[2.25rem] font-normal leading-[1.35] tracking-normal text-[#3d2f2f] md:text-[3.5rem]">
             Nếu bạn muốn trò chuyện,
-            <span className="block font-medium italic text-rose-200">
+            <span className="block font-medium  text-rose-200">
               mình luôn ở đây để lắng nghe
             </span>
           </h1>
@@ -182,7 +182,7 @@ export default function ContactPage() {
               <div className="my-8 h-px bg-gradient-to-r from-rose-100 via-rose-200/70 to-transparent" />
 
               <div className="rounded-[30px] border border-rose-200/80 bg-gradient-to-br from-[#fffdf9] to-[#fff6f7] p-6 shadow-[0_14px_40px_rgba(214,156,161,0.08)]">
-                <p className="font-serif text-[17px] italic text-[#7f6666]">
+                <p className="font-serif text-[17px]  text-[#7f6666]">
                   Mình cũng có mặt ở đây:
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">
@@ -257,7 +257,7 @@ export default function ContactPage() {
                   <textarea
                     rows={6}
                     placeholder="Chia sẻ điều bạn muốn nói với mình..."
-                    className="input-field min-h-40 resize-none overflow-hidden rounded-[24px] border-rose-200 bg-white px-5 py-4 text-[15px] text-[#5a4545] shadow-[0_8px_24px_rgba(214,156,161,0.08)] placeholder:font-serif placeholder:text-[15px] placeholder:italic placeholder:text-[#a88e8e] focus:border-rose-300 focus:ring-rose-200"
+                    className="input-field min-h-40 resize-none overflow-hidden rounded-[24px] border-rose-200 bg-white px-5 py-4 text-[15px] text-[#5a4545] shadow-[0_8px_24px_rgba(214,156,161,0.08)] placeholder:font-serif placeholder:text-[15px] placeholder: placeholder:text-[#a88e8e] focus:border-rose-300 focus:ring-rose-200"
                   />
                 </label>
 

@@ -17,7 +17,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ subtitle, children, footer }) => {
       {/* Logo phối màu */}
       <h2 className="font-serif text-2xl mb-2 flex justify-center items-center gap-2">
         <span className="text-[#d96e83]">Becoming</span>
-        <span className="text-[#6b9b84] italic">Blooming</span>
+        <span className="text-[#6b9b84] ">Blooming</span>
       </h2>
       <p className="mb-5 text-sm text-sage-800/60">{subtitle}</p>
 
@@ -36,7 +36,7 @@ const AuthCard: React.FC<AuthCardProps> = ({ subtitle, children, footer }) => {
       {/* Dải phân cách "hoặc" */}
       <div className="relative my-5">
         <hr className="border-rose-100/50" />
-        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-xs italic text-rose-100">
+        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-4 text-xs  text-rose-100">
           hoặc
         </span>
       </div>

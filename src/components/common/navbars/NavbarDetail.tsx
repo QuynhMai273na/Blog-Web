@@ -14,7 +14,7 @@ export default function NavbarDetail({ category }: { category?: string }) {
               className="flex items-center gap-2 font-serif text-2xl"
             >
               <span className="text-[#d96e83]">Becoming</span>
-              <span className="text-[#6b9b84] italic">Blooming</span>
+              <span className="text-[#6b9b84] ">Blooming</span>
             </Link>
 
             {/* Nút Quay lại & Links */}

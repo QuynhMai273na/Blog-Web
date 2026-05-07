@@ -1,3 +1,7 @@
+import {
+  BLOG_CATEGORIES,
+  getBlogCategoryLabel,
+} from "@/constants/categories";
 import { createClient } from "@/lib/supabase/server";
 
 export type PostCategory = "Yoga" | "Tài chính" | "Parenting" | "Cuộc sống";
@@ -43,6 +47,7 @@ type PostRow = {
 export async function getPublishedPosts(options?: {
   limit?: number;
   categorySlug?: string;
+  orderBy?: "published_at" | "created_at";
 }) {
   const supabase = createClient();
   const selectClause =
@@ -52,7 +57,7 @@ export async function getPublishedPosts(options?: {
     .from("posts")
     .select(selectClause)
     .eq("status", "published")
-    .order("published_at", { ascending: false });
+    .order(options?.orderBy ?? "published_at", { ascending: false });
 
   if (options?.categorySlug) {
     query = query.eq("categories.slug", options.categorySlug);
@@ -70,6 +75,16 @@ export async function getPublishedPosts(options?: {
   }
 
   return attachCommentCounts((data ?? []) as PostRow[]);
+}
+
+export async function getLatestPostsByCategorySlugs(categorySlugs: string[]) {
+  const postsByCategory = await Promise.all(
+    categorySlugs.map((categorySlug) =>
+      getPublishedPosts({ categorySlug, limit: 1 }),
+    ),
+  );
+
+  return postsByCategory.flatMap((posts) => posts);
 }
 
 export async function getPostBySlug(slug: string) {
@@ -106,19 +121,8 @@ export async function getRelatedPosts(post: BlogPostSummary, limit = 3) {
 }
 
 export async function getCategoryOptions() {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("categories")
-    .select("name,slug")
-    .order("name");
-
-  if (error) {
-    console.error("[categories.list]", error);
-    return [];
-  }
-
-  return (data ?? []).map((category) => ({
-    label: getCategoryLabel(category.slug, category.name),
+  return BLOG_CATEGORIES.map((category) => ({
+    label: category.label,
     value: category.slug,
   }));
 }
@@ -191,11 +195,7 @@ function getPostCategory(slug: string): PostCategory {
 }
 
 function getCategoryLabel(slug: string | null, fallback?: string | null) {
-  if (slug === "yoga") return "Yoga & Sức khỏe";
-  if (slug === "finance") return "Tài chính";
-  if (slug === "parenting") return "Parenting";
-  if (slug === "life") return "Cuộc sống";
-  return fallback ?? "Cuộc sống";
+  return getBlogCategoryLabel(slug, fallback);
 }
 
 function formatDate(value: string | null) {

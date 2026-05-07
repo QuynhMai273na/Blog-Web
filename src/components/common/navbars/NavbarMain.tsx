@@ -23,7 +23,7 @@ export default function NavbarMain() {
           className="font-serif text-2xl font-semibold leading-none"
         >
           <span className="text-[#d96e83]">Becoming</span>{" "}
-          <span className="text-[#6b9b84] italic">Blooming</span>
+          <span className="text-[#6b9b84] ">Blooming</span>
         </Link>
 
         <ul className="hidden items-center gap-6 font-sans text-base font-medium tracking-[0.01em] text-[#667568] md:flex">

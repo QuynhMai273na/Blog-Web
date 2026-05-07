@@ -16,7 +16,7 @@ export default function AboutPage() {
             <h1 className="mb-2 font-serif text-3xl md:text-[40px] text-[#3a2520]">
               Xin chào, mình là
             </h1>
-            <h2 className="mb-6 font-serif text-4xl md:text-[48px] italic text-[#d96e83]">
+            <h2 className="mb-6 font-serif text-4xl md:text-[48px]  text-[#d96e83]">
               Becoming Blooming
             </h2>
             <p className="mb-8 text-base font-light leading-relaxed text-[#7a5a55] ">
@@ -51,7 +51,7 @@ export default function AboutPage() {
           <section className="rounded-[24px] border border-[#f0e6e0] bg-white p-8 md:p-10 shadow-sm">
             <h3 className="mb-4 font-serif  text-2xl md:text-3xl text-[#3a2520]">
               <span>🌱</span>
-              <span className="italic"> Câu chuyện của mình</span>
+              <span className=""> Câu chuyện của mình</span>
             </h3>
             <p className="text-base font-light leading-relaxed text-[#7a5a55]">
               Mình bắt đầu viết blog này vào năm 2024, khi cảm thấy mình đang
@@ -66,24 +66,24 @@ export default function AboutPage() {
           <section className="rounded-[24px] border border-[#f0e6e0] bg-white p-8 md:p-10 shadow-sm">
             <h3 className="mb-6 ml-2 font-serif text-2xl md:text-3xl  text-[#3a2520]">
               <span>💫</span>
-              <span className="italic">Những điều mình tin tưởng</span>
+              <span className="">Những điều mình tin tưởng</span>
             </h3>
             <div className="grid grid-cols-1 gap-12 md:grid-cols-3 px-6">
               <div className="rounded-[20px] border border-rose-200 bg-rose-100/85 p-8 text-center transition-transform hover:-translate-y-1">
                 <div className="mb-4 text-3xl">🌸</div>
-                <p className="font-serif text-base italic text-[#7a5a55] leading-relaxed">
+                <p className="font-serif text-base  text-[#7a5a55] leading-relaxed">
                   Phát triển bản thân không cần phải hoàn hảo
                 </p>
               </div>
               <div className="rounded-[20px] border border-rose-200 bg-rose-100/85 p-8 text-center transition-transform hover:-translate-y-1">
                 <div className="mb-4 text-3xl">🧘</div>
-                <p className="font-serif text-base italic text-[#7a5a55] leading-relaxed">
+                <p className="font-serif text-base  text-[#7a5a55] leading-relaxed">
                   Sức khỏe tinh thần quan trọng như thể chất
                 </p>
               </div>
               <div className="rounded-[20px] border border-rose-200 bg-rose-100/85 p-8 text-center transition-transform hover:-translate-y-1">
                 <div className="mb-4 text-3xl">💌</div>
-                <p className="font-serif text-base italic text-[#7a5a55] leading-relaxed">
+                <p className="font-serif text-base  text-[#7a5a55] leading-relaxed">
                   Chia sẻ thật lòng tạo kết nối thật sự
                 </p>
               </div>
@@ -92,7 +92,7 @@ export default function AboutPage() {
 
           {/* Kết nối với mình */}
           <section className="rounded-[24px] border border-[#f0e6e0] bg-white p-10 text-center shadow-sm">
-            <h3 className="mb-4 font-serif text-2xl italic text-[#3a2520]">
+            <h3 className="mb-4 font-serif text-2xl  text-[#3a2520]">
               Kết nối với mình
             </h3>
             <p className="mb-8 text-sm text-[#7a5a55] font-light">

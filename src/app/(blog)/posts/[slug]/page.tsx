@@ -106,7 +106,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                 </p>
               ))}
 
-              <blockquote className="mt-8 rounded-[24px] border-l-4 border-rose-300 bg-gradient-to-r from-rose-50 to-rose-50/35 px-6 py-5 font-serif text-[1.25rem] italic leading-[1.7] text-[#9a6570] md:text-[1.35rem]">
+              <blockquote className="mt-8 rounded-[24px] border-l-4 border-rose-300 bg-gradient-to-r from-rose-50 to-rose-50/35 px-6 py-5 font-serif text-[1.25rem]  leading-[1.7] text-[#9a6570] md:text-[1.35rem]">
                 Những thay đổi bền vững thường bắt đầu từ điều nhỏ, lặp lại đủ
                 lâu và đủ tử tế với mình.
               </blockquote>
@@ -138,10 +138,10 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                 <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full border border-rose-200 bg-rose-50 text-3xl shadow-sm">
                   🌸
                 </div>
-                <h3 className="font-serif text-[1.7rem] font-semibold italic text-[#4a3737]">
+                <h3 className="font-serif text-[1.7rem] font-semibold  text-[#4a3737]">
                   Becoming Blooming
                 </h3>
-                <p className="mt-3 text-[14px] italic leading-7 text-[#8a7474]">
+                <p className="mt-3 text-[14px]  leading-7 text-[#8a7474]">
                   Người mẹ đang học cách sống chậm, sống đẹp và phát triển từng
                   ngày.
                 </p>
@@ -165,7 +165,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                     href={`/posts/${relatedPost.slug}`}
                     className="group block border-b border-rose-100/80 pb-4 last:border-b-0 last:pb-0"
                   >
-                    <p className="font-serif text-[15px] italic leading-7 text-[#6c5555] transition-colors duration-300 group-hover:text-rose-400">
+                    <p className="font-serif text-[15px]  leading-7 text-[#6c5555] transition-colors duration-300 group-hover:text-rose-400">
                       {relatedPost.title}
                     </p>
                   </Link>
