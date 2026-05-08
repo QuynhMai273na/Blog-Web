@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import AuthAvatarMenu from "@/components/common/AuthAvatarMenu";
@@ -14,12 +14,13 @@ const mainLinks = [
 const postCategories = [
   { name: "Parenting", href: "/category/parenting" },
   { name: "Yoga & Sức khỏe", href: "/category/yoga" },
-  { name: "Tài chính", href: "/category/finance" },
+  { name: "Tài chính cá nhân", href: "/category/finance" },
   { name: "Cuộc sống", href: "/category/life" },
 ];
 
 export default function DynamicNavbar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const dropdownRef = useRef<HTMLLIElement>(null);
   const [isPostMenuOpen, setIsPostMenuOpen] = useState(false);
 
@@ -40,6 +41,16 @@ export default function DynamicNavbar() {
 
   const isPostsActive =
     pathname.startsWith("/posts") || pathname.startsWith("/category");
+  const selectedPostCategorySlug =
+    pathname.startsWith("/category/")
+      ? pathname.split("/")[2]
+      : pathname === "/posts" && searchParams.get("cat") !== "all"
+        ? searchParams.get("cat")
+        : null;
+  const postMenuLabel =
+    postCategories.find(
+      (category) => category.href === `/category/${selectedPostCategorySlug}`,
+    )?.name ?? "Bài viết";
 
   return (
     <>
@@ -80,7 +91,7 @@ export default function DynamicNavbar() {
               aria-expanded={isPostMenuOpen}
               onClick={() => setIsPostMenuOpen((value) => !value)}
             >
-              Bài viết
+              {postMenuLabel}
               <ChevronDown
                 size={16}
                 className={`transition-transform ${
@@ -100,7 +111,7 @@ export default function DynamicNavbar() {
                   role="menuitem"
                   onClick={() => setIsPostMenuOpen(false)}
                   className={`block px-4 py-2.5 font-sans text-sm transition hover:bg-[#fff5f6] hover:text-[#c85f70] ${
-                    isActive("/posts")
+                    isActive("/posts") && !selectedPostCategorySlug
                       ? "font-semibold text-[#c85f70]"
                       : "text-[#667568]"
                   }`}
@@ -115,7 +126,8 @@ export default function DynamicNavbar() {
                     role="menuitem"
                     onClick={() => setIsPostMenuOpen(false)}
                     className={`block px-4 py-2.5 font-sans text-sm transition hover:bg-[#fff5f6] hover:text-[#c85f70] ${
-                      isActive(category.href)
+                      isActive(category.href) ||
+                      category.href === `/category/${selectedPostCategorySlug}`
                         ? "font-semibold text-[#c85f70]"
                         : "text-[#667568]"
                     }`}
