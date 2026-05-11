@@ -32,7 +32,7 @@ const contactMethods = [
   {
     icon: MapPin,
     label: "Địa điểm",
-    value: "Việt Nam",
+    value: "Hô Chí Minh, Việt Nam",
   },
 ];
 
@@ -105,10 +105,10 @@ export default function ContactPage() {
           <p className="mb-3 font-serif text-[13px]  tracking-[0.2em] text-sage-800/55">
             — contact & kind conversations —
           </p>
-          <h1 className="mx-auto max-w-3xl font-serif text-[2.25rem] font-normal leading-[1.35] tracking-normal text-[#3d2f2f] md:text-[3.5rem]">
+          <h1 className="mx-auto max-w-3xl font-serif text-3xl leading-[1.35] tracking-normal text-[#3d2f2f] md:text-[40px]">
             Nếu bạn muốn trò chuyện,
-            <span className="block font-medium  text-rose-200">
-              mình luôn ở đây để lắng nghe
+            <span className="block font-medium  text-rose-300">
+              mình luôn ở đây lắng nghe
             </span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-[14px] leading-7 text-[#7f6e6e] md:text-[15px]">
@@ -135,7 +135,7 @@ export default function ContactPage() {
                 Một góc nhỏ để kết nối
               </div>
 
-              <h2 className="mt-6 font-serif text-base font-normal leading-[1.35] text-[#4a3737] md:text-[2.8rem]">
+              <h2 className="mt-6 font-serif text-base font-normal  text-[#4a3737] md:text-[36px]">
                 Nói chuyện với mình nhé
               </h2>
               <p className="mt-5 max-w-xl text-[15px] leading-8 text-[#6d5a5a]">
@@ -213,7 +213,7 @@ export default function ContactPage() {
             />
 
             <div className="relative">
-              <h2 className="font-serif text-base font-normal leading-[1.35] text-[#3d2f2f] md:text-[2.8rem]">
+              <h2 className="font-serif text-base font-normal  text-[#3d2f2f] md:text-[36px]">
                 Gửi tin nhắn
               </h2>
               <p className="mt-3 max-w-lg text-[14px] leading-7 text-[#7a6f6f]">

@@ -12,10 +12,20 @@ export function createClient() {
           return (await cookieStore).get(name)?.value;
         },
         async set(name, value, options) {
-          (await cookieStore).set({ name, value, ...options });
+          try {
+            (await cookieStore).set({ name, value, ...options });
+          } catch {
+            // Server Components can read cookies but cannot write them.
+            // Session refresh cookie writes are handled by middleware.
+          }
         },
         async remove(name, options) {
-          (await cookieStore).set({ name, value: "", ...options });
+          try {
+            (await cookieStore).set({ name, value: "", ...options });
+          } catch {
+            // Server Components can read cookies but cannot write them.
+            // Session refresh cookie writes are handled by middleware.
+          }
         },
       },
     },

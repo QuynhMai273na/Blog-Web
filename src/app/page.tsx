@@ -20,12 +20,17 @@ function isBlogCategorySlug(value: string): value is BlogCategorySlug {
   return BLOG_CATEGORY_SLUGS.includes(value as BlogCategorySlug);
 }
 
+function getCategoryIcon(slug: string) {
+  if (slug === "yoga") return "🧘";
+  if (slug === "finance") return "💰";
+  if (slug === "parenting") return "👶";
+  return "🌻";
+}
+
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const categorySlug =
-    params?.cat && isBlogCategorySlug(params.cat)
-      ? params.cat
-      : undefined;
+    params?.cat && isBlogCategorySlug(params.cat) ? params.cat : undefined;
   const [recentPosts, categories] = await Promise.all([
     categorySlug
       ? getPublishedPosts({ categorySlug, limit: 4 })
@@ -64,7 +69,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           Slowly becoming, beautifully blooming
         </p>
         <p className="mx-auto mt-2.5 max-w-[700px] font-sans text-base tracking-[0.5px] text-[#8a8a8a]">
-          Một trang nhật ký về yoga · parenting ·  tài chính cá nhân · cuộc sống
+          Một trang nhật ký về yoga · parenting · tài chính cá nhân · cuộc sống
         </p>
       </section>
 
@@ -74,7 +79,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           href="/"
           scroll={false}
           className={[
-            "rounded-full border px-4 py-1.5 font-sans text-[12px] transition-all",
+            "inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 font-sans text-[12px] transition-all",
             !categorySlug
               ? "border-sage-500 bg-sage-50 font-medium text-sage-500"
               : "border-rose-100 text-sage-800 hover:border-rose-200 hover:text-sage-800",
@@ -89,12 +94,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             href={`/?cat=${category.value}`}
             scroll={false}
             className={[
-              "rounded-full border px-4 py-1.5 font-sans text-[12px] transition-all",
+              "inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 font-sans text-[12px] transition-all",
               categorySlug === category.value
                 ? "border-sage-500 bg-sage-50 font-medium text-sage-500"
                 : "border-rose-100 text-sage-800 hover:border-rose-200 hover:text-sage-800",
             ].join(" ")}
           >
+            <span aria-hidden>{getCategoryIcon(category.value)}</span>
             {category.label}
           </Link>
         ))}
@@ -121,7 +127,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </section>
 
       <section id="latest-posts" className="mx-auto w-full bg-sand-100 p-8">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center justify-center gap-8 sm:grid-cols-2 md:grid-cols-4">
+        <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,18rem)] justify-center gap-8 sm:grid-cols-[repeat(auto-fit,minmax(16rem,18rem))]">
           {recentPosts.map((post) => (
             <PostCard key={post.slug} {...post} />
           ))}
@@ -138,8 +144,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           Cùng mình đi qua hành trình mỗi tuần nhé
         </h2>
         <p className="mb-8 font-serif text-[13px]  text-sage-800">
-          Nhận bài viết mới qua email - không spam, chỉ có chuyện thật từ trái
-          tim
+          Đăng ký email để nhận thông báo về những bài viết mới nhất.
         </p>
 
         <form className="mx-auto flex max-w-md flex-col gap-3 sm:flex-row">

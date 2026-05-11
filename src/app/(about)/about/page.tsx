@@ -1,4 +1,10 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+
 export default function AboutPage() {
+  const router = useRouter();
+
   return (
     <div className="w-full animate-bloom bg-[#f6efe9]">
       {/* 1. Phần Intro (Nền trắng) */}
@@ -99,7 +105,12 @@ export default function AboutPage() {
               Nếu bạn muốn trò chuyện, hợp tác hoặc chỉ đơn giản là nói "hi" —
               mình luôn ở đây!
             </p>
-            <button className="rounded-full border border-[#f1ddd8] bg-white px-10 py-3 text-sm font-medium text-[#d96e83] transition-all hover:bg-[#fff5f6] hover:border-[#d96e83]">
+            <button
+              onClick={() => {
+                router.push("/contact");
+              }}
+              className="rounded-full border border-[#f1ddd8] bg-white px-10 py-3 text-sm font-medium text-[#d96e83] transition-all hover:bg-[#fff5f6] hover:border-[#d96e83]"
+            >
               Gửi tin nhắn
             </button>
           </section>
