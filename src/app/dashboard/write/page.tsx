@@ -1,6 +1,8 @@
 "use client";
 
 import { Cormorant_Garamond } from "next/font/google";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   AlignCenter,
   AlignLeft,
@@ -25,7 +27,16 @@ import {
   Type,
   Underline as UnderlineIcon,
 } from "lucide-react";
-import { KeyboardEvent, useMemo, useRef, useState } from "react";
+import {
+  KeyboardEvent,
+  ReactNode,
+  Suspense,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
 import { useEditor, EditorContent, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import UnderlineExt from "@tiptap/extension-underline";
@@ -34,6 +45,9 @@ import Placeholder from "@tiptap/extension-placeholder";
 import TiptapImage from "@tiptap/extension-image";
 import TiptapLink from "@tiptap/extension-link";
 import { X } from "lucide-react";
+import { BLOG_CATEGORIES, type BlogCategorySlug } from "@/constants/categories";
+import { createClient } from "@/lib/supabase/client";
+import CustomSelect from "@/components/ui/CustomSelect";
 
 const cormorant = Cormorant_Garamond({
   subsets: ["vietnamese"],
@@ -43,16 +57,10 @@ const cormorant = Cormorant_Garamond({
   display: "swap",
 });
 
-const categoryOptions = [
-  "Yoga & Sức khỏe",
-  "Parenting",
-  "Tài chính",
-  "Lối sống chậm",
-];
-
-const initialTags = ["yoga", "mẹ bầu", "sức khỏe"];
-
-const initialContent = `<p>Mình chưa từng nghĩ hành trình làm mẹ lại dạy mình cách lắng nghe cơ thể sâu đến vậy.</p><p>Đêm xuống, khi em bé chuyển mình, mình bắt đầu tìm đến những động tác yoga rất chậm để thả lỏng lưng và hông.</p><h2>1. Tư thế con mèo - con bò</h2><p>Đây là chuỗi chuyển động nhẹ, giúp cột sống linh hoạt hơn và nhịp thở đều lại sau một ngày dài.</p><blockquote><p>Điều mình nhận ra là: chỉ cần 10 phút đủ dịu dàng, cơ thể đã bớt căng thẳng rất nhiều.</p></blockquote>`;
+const categoryOptions = BLOG_CATEGORIES.map((category) => ({
+  label: category.label,
+  value: category.slug,
+}));
 
 type PublishMode = "draft" | "scheduled" | "published";
 type ToggleKey = "comments" | "featured" | "emailSubscribers" | "showHomepage";
@@ -98,6 +106,14 @@ const toggleMeta: Array<{
 
 const averageWordsPerMinute = 220;
 
+type NoticeState = {
+  tone: "success" | "error";
+  message: string;
+  href?: string;
+} | null;
+
+type SaveIntent = "draft" | "publish";
+
 function ToolbarBtn({
   label,
   icon: Icon,
@@ -128,54 +144,132 @@ function ToolbarBtn({
   );
 }
 
-function ActionButtons() {
+function ActionButtons({
+  disabled,
+  isSaving,
+  onDraft,
+  onPreview,
+  onPublish,
+}: {
+  disabled: boolean;
+  isSaving: SaveIntent | null;
+  onDraft: () => void;
+  onPreview: () => void;
+  onPublish: () => void;
+}) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <button
         type="button"
+        onClick={onDraft}
+        disabled={disabled || isSaving !== null}
         className="rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-[#8a6b6b] transition-all duration-200 hover:border-rose-300 hover:bg-rose-50"
       >
-        Lưu nháp
+        {isSaving === "draft" ? "Đang lưu..." : "Lưu nháp"}
       </button>
       <button
         type="button"
+        onClick={onPreview}
+        disabled={disabled}
         className="rounded-full border border-sage-100 bg-sage-50 px-4 py-2 text-sm font-medium text-[#64806f] transition-all duration-200 hover:border-sage-300 hover:bg-white"
       >
         Xem trước
       </button>
       <button
         type="button"
+        onClick={onPublish}
+        disabled={disabled || isSaving !== null}
         className="rounded-full bg-sage-300 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(168,198,159,0.32)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-sage-800"
       >
-        Đăng bài
+        {isSaving === "publish" ? "Đang lưu..." : "Đăng bài"}
       </button>
     </div>
   );
 }
 
-export default function WritePage() {
-  const fileInputRef = useRef<HTMLInputElement>(null);
+function SidebarSection({
+  id,
+  icon: Icon,
+  title,
+  iconColor,
+  open,
+  onToggle,
+  children,
+}: {
+  id: string;
+  icon: typeof Type;
+  title: string;
+  iconColor: string;
+  open: boolean;
+  onToggle: (id: string) => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-[26px] border border-white/90 bg-[#fffdfb]/95 shadow-[0_16px_50px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
+      <button
+        type="button"
+        onClick={() => onToggle(id)}
+        className="flex w-full items-center justify-between px-5 py-4 text-left"
+      >
+        <div className="flex items-center gap-2.5">
+          <Icon className={`h-4 w-4 ${iconColor}`} />
+          <span className="font-serif text-[1.35rem] font-normal italic text-[#4a3737]">
+            {title}
+          </span>
+        </div>
+        <span
+          className={`text-sm text-[#b09292] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+        >
+          ▾
+        </span>
+      </button>
+      {open && (
+        <div className="border-t border-rose-100/60 px-5 pb-5 pt-4">
+          {children}
+        </div>
+      )}
+    </section>
+  );
+}
 
-  const [title, setTitle] = useState(
-    "5 động tác yoga giúp mẹ bầu ngủ ngon mỗi tối",
+export default function WritePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-full items-center justify-center bg-[#f7f2ed] px-4">
+          <p className="font-sans text-sm text-[#7a5a55]">Đang tải editor...</p>
+        </div>
+      }
+    >
+      <WritePageContent />
+    </Suspense>
   );
-  const [excerpt, setExcerpt] = useState(
-    "Những tư thế nhẹ nhàng phù hợp cho tam cá nguyệt thứ ba, giúp mình và bé yêu cùng nghỉ ngơi sâu hơn mỗi đêm.",
-  );
-  const [publishMode, setPublishMode] = useState<PublishMode>("scheduled");
-  const [scheduledAt, setScheduledAt] = useState("2026-05-02T20:30");
+}
+
+function WritePageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const editSlug = searchParams.get("edit");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverFileRef = useRef<File | null>(null);
+
+  const [title, setTitle] = useState("");
+  const [excerpt, setExcerpt] = useState("");
+  const [publishMode, setPublishMode] = useState<PublishMode>("draft");
+  const [scheduledAt, setScheduledAt] = useState("");
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [coverFileName, setCoverFileName] = useState("");
   const [isDragging, setIsDragging] = useState(false);
-  const [category, setCategory] = useState(categoryOptions[0]);
+  const [category, setCategory] = useState<BlogCategorySlug>(categoryOptions[0].value);
   const [tagInput, setTagInput] = useState("");
-  const [tags, setTags] = useState(initialTags);
-  const [seoTitle, setSeoTitle] = useState(
-    "5 động tác yoga giúp mẹ bầu ngủ ngon hơn mỗi tối",
-  );
-  const [seoDescription, setSeoDescription] = useState(
-    "Những tư thế yoga nhẹ nhàng giúp mẹ bầu thư giãn, ngủ sâu hơn và giảm đau lưng ở tam cá nguyệt cuối.",
-  );
+  const [tags, setTags] = useState<string[]>([]);
+  const [seoTitle, setSeoTitle] = useState("");
+  const [seoDescription, setSeoDescription] = useState("");
+  const [authState, setAuthState] = useState<"loading" | "admin" | "forbidden">("loading");
+  const [notice, setNotice] = useState<NoticeState>(null);
+  const [isSaving, setIsSaving] = useState<SaveIntent | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [editingPostId, setEditingPostId] = useState<string | null>(null);
   const [toggles, setToggles] = useState<Record<ToggleKey, boolean>>({
     comments: true,
     featured: false,
@@ -200,7 +294,7 @@ export default function WritePage() {
       TiptapImage,
       TiptapLink.configure({ openOnClick: false }),
     ],
-    content: initialContent,
+    content: "",
     editorProps: {
       attributes: {
         class:
@@ -208,6 +302,75 @@ export default function WritePage() {
       },
     },
   });
+
+  useEffect(() => {
+    const supabase = createClient();
+
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) {
+        setAuthState("forbidden");
+        return;
+      }
+
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("app_role")
+        .eq("id", data.user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.error("[write.admin.load]", error);
+      }
+
+      setAuthState(profile?.app_role === "admin" ? "admin" : "forbidden");
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!editSlug || authState !== "admin" || !editor) return;
+
+    fetch(`/api/admin/posts/${editSlug}`)
+      .then(async (response) => {
+        const result = (await response.json().catch(() => null)) as
+          | {
+              post?: {
+                id: string;
+                title: string;
+                summary: string | null;
+                content: string | null;
+                status: PublishMode;
+                published_at: string | null;
+                categories: { slug: BlogCategorySlug | null } | Array<{ slug: BlogCategorySlug | null }> | null;
+              };
+              error?: string;
+            }
+          | null;
+
+        if (!response.ok || !result?.post) {
+          setNotice({
+            tone: "error",
+            message: result?.error ?? "Không thể tải bài viết cần sửa.",
+          });
+          return;
+        }
+
+        const postCategory = Array.isArray(result.post.categories)
+          ? result.post.categories[0]
+          : result.post.categories;
+
+        setEditingPostId(result.post.id);
+        setTitle(result.post.title);
+        setExcerpt(result.post.summary ?? "");
+        setCategory(postCategory?.slug ?? categoryOptions[0].value);
+        setPublishMode(result.post.status ?? "draft");
+        setScheduledAt(toDatetimeLocalValue(result.post.published_at));
+        editor.commands.setContent(plainContentToHtml(result.post.content ?? ""));
+      })
+      .catch((error: unknown) => {
+        console.error("[write.edit.load]", error);
+        setNotice({ tone: "error", message: "Không thể tải bài viết cần sửa." });
+      });
+  }, [authState, editSlug, editor]);
 
   const activeFormats = useEditorState({
     editor,
@@ -250,6 +413,11 @@ export default function WritePage() {
 
   function handleFile(file: File | null) {
     if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setNotice({ tone: "error", message: "Vui lòng chọn file ảnh hợp lệ." });
+      return;
+    }
+    coverFileRef.current = file;
     setCoverFileName(file.name);
     const reader = new FileReader();
     reader.onload = () => {
@@ -279,45 +447,104 @@ export default function WritePage() {
     setSidebarOpen((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  function SidebarSection({
-    id,
-    icon: Icon,
-    title,
-    iconColor,
-    children,
-  }: {
-    id: string;
-    icon: typeof Type;
-    title: string;
-    iconColor: string;
-    children: React.ReactNode;
-  }) {
-    const open = sidebarOpen[id];
+  async function handleSubmit(intent: SaveIntent) {
+    setNotice(null);
+
+    const validationError = validatePost({
+      title,
+      excerpt,
+      content: editor?.getText() ?? "",
+      publishMode: intent === "draft" ? "draft" : publishMode,
+      scheduledAt,
+    });
+
+    if (validationError) {
+      setNotice({ tone: "error", message: validationError });
+      return;
+    }
+
+    setIsSaving(intent);
+    const requestedMode = intent === "draft" ? "draft" : publishMode;
+    const response = await fetch(
+      editingPostId ? `/api/admin/posts/${editingPostId}` : "/api/admin/posts",
+      {
+      method: editingPostId ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title,
+        excerpt,
+        content: toPlainPostContent(editor?.getJSON()),
+        html: editor?.getHTML() ?? "",
+        category,
+        tags,
+        seoTitle,
+        seoDescription,
+        coverImage,
+        coverFileName,
+        publishMode: requestedMode,
+        scheduledAt: requestedMode === "scheduled" ? scheduledAt : null,
+        options: toggles,
+      }),
+    });
+
+    const result = (await response.json().catch(() => null)) as
+      | { error?: string; post?: { slug: string; status: string } }
+      | null;
+
+    setIsSaving(null);
+
+    if (!response.ok || !result?.post) {
+      setNotice({
+        tone: "error",
+        message: result?.error ?? "Không thể lưu bài viết.",
+      });
+      return;
+    }
+
+    setNotice({
+      tone: "success",
+      message:
+        editingPostId
+          ? "Bài viết đã được cập nhật."
+          : result.post.status === "published"
+            ? "Bài viết đã được đăng."
+            : result.post.status === "scheduled"
+              ? "Bài viết đã được lên lịch."
+              : "Bản nháp đã được lưu.",
+      href: result.post.status === "published" ? `/posts/${result.post.slug}` : "/dashboard",
+    });
+
+    if (result.post.status === "published") {
+      router.refresh();
+    }
+  }
+
+  if (authState === "loading") {
     return (
-      <section className="rounded-[26px] border border-white/90 bg-[#fffdfb]/95 shadow-[0_16px_50px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md overflow-hidden">
-        <button
-          type="button"
-          onClick={() => toggleSidebar(id)}
-          className="flex w-full items-center justify-between px-5 py-4 text-left"
-        >
-          <div className="flex items-center gap-2.5">
-            <Icon className={`h-4 w-4 ${iconColor}`} />
-            <span className="font-serif text-[1.35rem] font-normal italic text-[#4a3737]">
-              {title}
-            </span>
-          </div>
-          <span
-            className={`text-[#b09292] transition-transform duration-200 text-sm ${open ? "rotate-180" : ""}`}
+      <div className="flex min-h-full items-center justify-center bg-[#f7f2ed] px-4">
+        <p className="font-sans text-sm text-[#7a5a55]">Đang kiểm tra quyền admin...</p>
+      </div>
+    );
+  }
+
+  if (authState === "forbidden") {
+    return (
+      <div className="flex min-h-full items-center justify-center bg-[#f7f2ed] px-4">
+        <section className="w-full max-w-md rounded-[20px] border border-[#f0e6e0] bg-white p-8 text-center shadow-[0_4px_32px_rgba(74,44,42,0.07)]">
+          <h1 className="font-serif text-2xl font-semibold text-[#3a2520]">
+            Chỉ admin mới được viết bài
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-[#8a7474]">
+            Tài khoản hiện tại không có quyền truy cập trang tạo bài mới.
+          </p>
+          <Link
+            href="/"
+            className="mt-5 inline-flex rounded-lg bg-[#c9606e] px-4 py-2 font-sans text-sm font-semibold text-white transition hover:bg-[#e8768a]"
           >
-            ▾
-          </span>
-        </button>
-        {open && (
-          <div className="border-t border-rose-100/60 px-5 pb-5 pt-4">
-            {children}
-          </div>
-        )}
-      </section>
+            Về trang chủ
+          </Link>
+        </section>
+      </div>
     );
   }
 
@@ -339,17 +566,24 @@ export default function WritePage() {
 
         <div className="absolute left-1/2 top-6 w-full max-w-2xl -translate-x-1/2 text-center px-4">
           <h1 className="mt-3 font-serif text-[2.3rem] font-normal text-[#3d2f2f] md:text-[3.2rem]">
-            Viết bài mới
+            {editingPostId ? "Sửa bài viết" : "Viết bài mới"}
           </h1>
           <p className="mt-2 text-sm text-[#7f6d6d]">
-            Một trang soạn thảo đầy đủ cho tiêu đề, excerpt, nội dung, lịch
-            đăng...
+            Soạn nội dung, lưu nháp, xem trước, đăng ngay hoặc lên lịch.
           </p>
         </div>
 
         <div className="rounded-[24px] border border-sage-100 bg-sage-50/80 px-5 py-4 text-sm text-[#64806f] shadow-sm">
           <p className="font-medium">Chỉnh sửa lần cuối</p>
-          <p className="mt-1 text-[13px] text-[#7c9283]">DD/MM/YYYY • Time</p>
+          <p className="mt-1 text-[13px] text-[#7c9283]">
+            {new Intl.DateTimeFormat("vi-VN", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            }).format(new Date())}
+          </p>
         </div>
       </header>
 
@@ -560,10 +794,33 @@ export default function WritePage() {
 
             {/* Bottom action bar */}
             <div className="flex items-center justify-between rounded-[28px] border border-white/80 bg-white/80 px-5 py-4 shadow-[0_12px_36px_rgba(45,62,47,0.06)] backdrop-blur-md">
-              <p className="text-[12px] italic text-[#8b7777]">
-                Hành trình ngàn dặm bắt đầu từ một trang giấy trắng 🌸
-              </p>
-              <ActionButtons />
+              <div className="min-w-0">
+                {notice ? (
+                  <p
+                    className={`text-[12px] font-medium ${
+                      notice.tone === "success" ? "text-[#64806f]" : "text-rose-500"
+                    }`}
+                  >
+                    {notice.message}
+                    {notice.href && (
+                      <Link href={notice.href} className="ml-2 underline">
+                        Mở
+                      </Link>
+                    )}
+                  </p>
+                ) : (
+                  <p className="text-[12px] italic text-[#8b7777]">
+                    Bài mới sẽ chỉ được lưu khi tài khoản admin xác nhận thao tác.
+                  </p>
+                )}
+              </div>
+              <ActionButtons
+                disabled={!editor}
+                isSaving={isSaving}
+                onDraft={() => void handleSubmit("draft")}
+                onPreview={() => setIsPreviewOpen(true)}
+                onPublish={() => void handleSubmit("publish")}
+              />
             </div>
           </div>
 
@@ -574,6 +831,8 @@ export default function WritePage() {
               icon={CalendarDays}
               title="Trạng thái đăng"
               iconColor="text-rose-300"
+              open={sidebarOpen.publish}
+              onToggle={toggleSidebar}
             >
               <div className="space-y-2">
                 {publishOptions.map((option) => {
@@ -632,6 +891,8 @@ export default function WritePage() {
               icon={ImageIcon}
               title="Ảnh bìa"
               iconColor="text-sage-300"
+              open={sidebarOpen.cover}
+              onToggle={toggleSidebar}
             >
               <input
                 ref={fileInputRef}
@@ -691,25 +952,20 @@ export default function WritePage() {
               icon={Type}
               title="Phân loại & Tags"
               iconColor="text-[#d5ab72]"
+              open={sidebarOpen.category}
+              onToggle={toggleSidebar}
             >
               <label className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#a58f8f]">
                 Danh mục chính
               </label>
               <div className="relative mt-2">
-                <select
+                <CustomSelect
+                  options={categoryOptions}
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full appearance-none rounded-[14px] border border-transparent bg-[#2f2d2b] px-4 py-3 text-[14px] font-medium text-white outline-none"
-                >
-                  {categoryOptions.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-white/60">
-                  ▾
-                </span>
+                  onChange={(value) => setCategory(value as BlogCategorySlug)}
+                  buttonClassName="rounded-[14px] border-transparent bg-[#2f2d2b] px-4 py-3 text-[14px] font-medium text-white shadow-none focus:border-rose-300"
+                  panelClassName="rounded-[14px]"
+                />
               </div>
 
               <label className="mt-4 block text-[11px] font-semibold uppercase tracking-[0.22em] text-[#a58f8f]">
@@ -761,6 +1017,8 @@ export default function WritePage() {
               icon={Search}
               title="SEO"
               iconColor="text-[#9ba7b7]"
+              open={sidebarOpen.seo}
+              onToggle={toggleSidebar}
             >
               <label
                 htmlFor="seo-title"
@@ -819,6 +1077,8 @@ export default function WritePage() {
               icon={Check}
               title="Tùy chọn"
               iconColor="text-sage-300"
+              open={sidebarOpen.options}
+              onToggle={toggleSidebar}
             >
               <div className="space-y-2">
                 {toggleMeta.map(({ key, label, icon: Icon }) => (
@@ -846,6 +1106,144 @@ export default function WritePage() {
           </aside>
         </div>
       </div>
+
+      {isPreviewOpen &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed inset-0 z-[100] bg-[#fdfbf6]">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-rose-100 bg-white/95 px-5 py-3 shadow-[0_12px_30px_rgba(45,62,47,0.08)] backdrop-blur-md">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b09292]">
+                  Web preview
+                </p>
+                <p className="mt-0.5 text-sm font-medium text-[#5c4747]">
+                  {title || "Chưa có tiêu đề"}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPreviewOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-rose-100 bg-white text-[#9a6570] hover:bg-rose-50"
+                aria-label="Đóng xem trước"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="h-[calc(100vh-65px)] overflow-y-auto">
+              <section className="border-b border-rose-100/80 bg-white/95 px-4 pb-16 pt-8 shadow-[0_12px_40px_rgba(45,62,47,0.04)] md:px-6 md:pt-10">
+                <header className="mx-auto max-w-4xl text-center">
+                  <span className="inline-flex rounded-full border border-sage-100 bg-sage-50 px-4 py-1.5 text-[12px] font-medium text-[#6c8f7a] shadow-sm">
+                    {categoryOptions.find((option) => option.value === category)?.label}
+                  </span>
+                  <h1 className="mx-auto mt-6 max-w-4xl font-serif text-[2.5rem] font-normal leading-[1.24] text-[#3d2f2f] md:text-[4rem]">
+                    {title || "Chưa có tiêu đề"}
+                  </h1>
+                  <p className="mx-auto mt-5 max-w-3xl font-serif text-lg italic leading-8 text-[#6a5555]">
+                    {excerpt || "Chưa có tóm tắt."}
+                  </p>
+                </header>
+              </section>
+              <main className="mx-auto max-w-4xl px-4 py-10 md:px-6">
+                {coverImage && (
+                  <img
+                    src={coverImage}
+                    alt=""
+                    className="mb-8 aspect-video w-full rounded-[28px] object-cover shadow-[0_20px_60px_rgba(45,62,47,0.14)]"
+                  />
+                )}
+                <article
+                  className="prose prose-rose max-w-none rounded-[28px] border border-white/90 bg-[#fffefd]/95 p-7 text-[#3a312f] shadow-[0_24px_70px_rgba(45,62,47,0.1)] md:p-10"
+                  dangerouslySetInnerHTML={{ __html: editor?.getHTML() ?? "" }}
+                />
+              </main>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
+}
+
+function validatePost({
+  title,
+  excerpt,
+  content,
+  publishMode,
+  scheduledAt,
+}: {
+  title: string;
+  excerpt: string;
+  content: string;
+  publishMode: PublishMode;
+  scheduledAt: string;
+}) {
+  if (!title.trim()) return "Vui lòng nhập tiêu đề bài viết.";
+  if (!excerpt.trim()) return "Vui lòng nhập tóm tắt bài viết.";
+  if (!content.trim()) return "Vui lòng nhập nội dung bài viết.";
+  if (publishMode === "scheduled" && !scheduledAt) {
+    return "Vui lòng chọn ngày giờ đăng khi lên lịch.";
+  }
+  if (publishMode === "scheduled" && new Date(scheduledAt).getTime() <= Date.now()) {
+    return "Ngày giờ lên lịch phải nằm trong tương lai.";
+  }
+  return null;
+}
+
+function toPlainPostContent(doc: unknown) {
+  if (!doc || typeof doc !== "object" || !("content" in doc)) {
+    return "";
+  }
+
+  const nodes = (doc as { content?: unknown[] }).content ?? [];
+  return nodes.map(nodeToText).filter(Boolean).join("\n\n");
+}
+
+function nodeToText(node: unknown): string {
+  if (!node || typeof node !== "object") return "";
+  const item = node as {
+    type?: string;
+    attrs?: { level?: number };
+    content?: unknown[];
+    text?: string;
+  };
+  const text = (item.content ?? []).map(nodeToText).join("");
+
+  if (item.type === "text") return item.text ?? "";
+  if (item.type === "heading") return `${"#".repeat(item.attrs?.level ?? 2)} ${text}`.trim();
+  if (item.type === "blockquote") return text ? `> ${text}` : "";
+  if (item.type === "bulletList" || item.type === "orderedList") return text;
+  if (item.type === "listItem") return text ? `- ${text}` : "";
+  return text;
+}
+
+function toDatetimeLocalValue(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 16);
+}
+
+function plainContentToHtml(content: string) {
+  return content
+    .split(/\n{2,}/)
+    .map((block) => {
+      const trimmed = block.trim();
+      if (!trimmed) return "";
+      if (trimmed.startsWith("### ")) return `<h3>${escapeHtml(trimmed.slice(4))}</h3>`;
+      if (trimmed.startsWith("## ")) return `<h2>${escapeHtml(trimmed.slice(3))}</h2>`;
+      if (trimmed.startsWith("> ")) return `<blockquote><p>${escapeHtml(trimmed.slice(2))}</p></blockquote>`;
+      return `<p>${escapeHtml(trimmed).replace(/\n/g, "<br>")}</p>`;
+    })
+    .join("");
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }

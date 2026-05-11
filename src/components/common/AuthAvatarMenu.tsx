@@ -11,6 +11,7 @@ type Profile = {
   display_name: string | null;
   avatar_url: string | null;
   email: string | null;
+  app_role: string | null;
 };
 
 export default function AuthAvatarMenu() {
@@ -26,7 +27,7 @@ export default function AuthAvatarMenu() {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("profiles")
-      .select("display_name, avatar_url, email")
+      .select("display_name, avatar_url, email, app_role")
       .eq("id", userId)
       .maybeSingle();
 
@@ -114,6 +115,7 @@ export default function AuthAvatarMenu() {
     "User";
   const email = profile?.email ?? user.email;
   const avatarUrl = profile?.avatar_url ?? user.user_metadata.avatar_url;
+  const isAdmin = profile?.app_role === "admin";
 
   return (
     <div ref={menuRef} className="relative">
@@ -160,6 +162,26 @@ export default function AuthAvatarMenu() {
           >
             My profile
           </Link>
+          {isAdmin && (
+            <Link
+              href="/dashboard/write"
+              role="menuitem"
+              onClick={() => setIsOpen(false)}
+              className="block px-4 py-2.5 font-sans text-sm font-semibold text-[#c85f70] transition hover:bg-[#fff5f6]"
+            >
+              + Viết bài mới
+            </Link>
+          )}
+          {isAdmin && (
+            <Link
+              href="/dashboard"
+              role="menuitem"
+              onClick={() => setIsOpen(false)}
+              className="block px-4 py-2.5 font-sans text-sm font-semibold text-[#c85f70] transition hover:bg-[#fff5f6]"
+            >
+              Dashboard
+            </Link>
+          )}
           <button
             type="button"
             role="menuitem"

@@ -17,6 +17,7 @@ export type BlogPostSummary = {
   date: string;
   readTime: string;
   commentCount: number;
+  status?: string;
 };
 
 export type BlogPostDetail = BlogPostSummary & {
@@ -41,6 +42,7 @@ type PostRow = {
   content: string | null;
   published_at: string | null;
   created_at: string | null;
+  status?: string | null;
   categories: CategoryRow | CategoryRow[] | null;
 };
 
@@ -56,7 +58,8 @@ export async function getPublishedPosts(options?: {
   let query = supabase
     .from("posts")
     .select(selectClause)
-    .eq("status", "published")
+    .in("status", ["published", "scheduled"])
+    .lte("published_at", new Date().toISOString())
     .order(options?.orderBy ?? "published_at", { ascending: false });
 
   if (options?.categorySlug) {
@@ -95,7 +98,8 @@ export async function getPostBySlug(slug: string) {
       "id,title,slug,summary,content,published_at,created_at,categories(name,slug)",
     )
     .eq("slug", slug)
-    .eq("status", "published")
+    .in("status", ["published", "scheduled"])
+    .lte("published_at", new Date().toISOString())
     .maybeSingle();
 
   if (error) {
@@ -125,6 +129,27 @@ export async function getCategoryOptions() {
     label: category.label,
     value: category.slug,
   }));
+}
+
+export async function getAdminPosts(options?: { limit?: number }) {
+  const supabase = createClient();
+  let query = supabase
+    .from("posts")
+    .select("id,title,slug,summary,content,published_at,created_at,status,categories(name,slug)")
+    .order("created_at", { ascending: false });
+
+  if (options?.limit) {
+    query = query.limit(options.limit);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("[posts.adminList]", error);
+    return [];
+  }
+
+  return attachCommentCounts((data ?? []) as PostRow[]);
 }
 
 async function attachCommentCounts(rows: PostRow[]) {
@@ -168,6 +193,7 @@ function toPostSummary(post: PostRow, commentCount: number): BlogPostSummary {
     date: formatDate(post.published_at ?? post.created_at),
     readTime: getReadTime(content),
     commentCount,
+    status: post.status ?? "draft",
   };
 }
 

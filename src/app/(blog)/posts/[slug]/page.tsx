@@ -8,6 +8,8 @@ import {
   getRelatedPosts,
 } from "@/services/post.service";
 import { CommentSection } from "@/components/blog/CommentSection";
+import { PostActions } from "@/components/dashboard/PostActions";
+import { createClient } from "@/lib/supabase/server";
 
 type PostDetailPageProps = {
   params: Promise<{ slug: string }>;
@@ -41,7 +43,10 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
     notFound();
   }
 
-  const relatedPosts = await getRelatedPosts(post);
+  const [relatedPosts, isAdmin] = await Promise.all([
+    getRelatedPosts(post),
+    getIsAdmin(),
+  ]);
 
   return (
     <div className="relative isolate animate-bloom pb-10 md:pb-14">
@@ -84,6 +89,15 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
               <span className="mx-2">•</span>
               {post.commentCount} bình luận
             </div>
+            {isAdmin && (
+              <PostActions
+                postId={post.id}
+                slug={post.slug}
+                canView={false}
+                redirectAfterDelete="/posts"
+                className="mt-6 justify-center"
+              />
+            )}
           </header>
         </div>
       </section>
@@ -199,4 +213,21 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
       </section>
     </div>
   );
+}
+
+async function getIsAdmin() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return false;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("app_role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  return profile?.app_role === "admin";
 }

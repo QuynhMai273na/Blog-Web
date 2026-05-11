@@ -1,17 +1,36 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { PostActions } from "@/components/dashboard/PostActions";
 import { createClient } from "@/lib/supabase/server";
-import { getPublishedPosts } from "@/services/post.service";
+import { getAdminPosts } from "@/services/post.service";
 
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("app_role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (profile?.app_role !== "admin") {
+    redirect("/");
+  }
 
   const [
     postsCount,
     pendingCommentsCount,
     subscribersCount,
-    recentPosts,
+    adminPosts,
   ] = await Promise.all([
     supabase.from("posts").select("id", { count: "exact", head: true }),
     supabase
@@ -19,7 +38,7 @@ export default async function DashboardPage() {
       .select("id", { count: "exact", head: true })
       .eq("is_approved", false),
     supabase.from("subscribers").select("id", { count: "exact", head: true }),
-    getPublishedPosts({ limit: 4 }),
+    getAdminPosts({ limit: 8 }),
   ]);
 
   const stats = [
@@ -31,8 +50,8 @@ export default async function DashboardPage() {
     },
     {
       label: "Bài đã đăng",
-      value: String(recentPosts.length),
-      sub: "Hiển thị gần nhất",
+      value: String(adminPosts.filter((post) => post.status === "published").length),
+      sub: "Trong danh sách gần nhất",
       type: "success",
     },
     {
@@ -131,7 +150,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="flex flex-col">
-            {recentPosts.map((post) => (
+            {adminPosts.map((post) => (
               <div
                 key={post.id}
                 className="grid grid-cols-[4fr_2fr_2fr_2fr] items-center border-t border-[#f0e6e0] px-6 py-5 transition-colors hover:bg-[#fafafa]"
@@ -144,18 +163,15 @@ export default async function DashboardPage() {
                 </div>
                 <div>
                   <span className="inline-flex rounded-full border border-[#d1e7dd] bg-[#f1f8f5] px-3 py-1 text-[11px] font-medium text-[#6b9b84]">
-                    Đã đăng
+                    {getStatusLabel(post.status)}
                   </span>
                 </div>
 
-                <div className="flex justify-end gap-2">
-                  <Link
-                    href={`/posts/${post.slug}`}
-                    className="rounded-lg border border-[#e5e5e5] px-4 py-1.5 text-xs font-medium text-[#7a5a55] transition-colors hover:bg-gray-50 hover:text-gray-700"
-                  >
-                    Xem
-                  </Link>
-                </div>
+                <PostActions
+                  postId={post.id}
+                  slug={post.slug}
+                  canView={post.status === "published"}
+                />
               </div>
             ))}
           </div>
@@ -163,4 +179,10 @@ export default async function DashboardPage() {
       </main>
     </div>
   );
+}
+
+function getStatusLabel(status?: string) {
+  if (status === "published") return "Đã đăng";
+  if (status === "scheduled") return "Đã lên lịch";
+  return "Bản nháp";
 }

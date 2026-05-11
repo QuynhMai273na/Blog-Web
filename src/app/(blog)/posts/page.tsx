@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { PostActions } from "@/components/dashboard/PostActions";
 import CustomSelect from "@/components/ui/CustomSelect";
+import { createClient } from "@/lib/supabase/server";
 import { getCategoryOptions, getPublishedPosts } from "@/services/post.service";
 
 type PostsPageProps = {
@@ -51,6 +53,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
     getPublishedPosts({ categorySlug, orderBy: "created_at" }),
     getCategoryOptions(),
   ]);
+  const isAdmin = await getIsAdmin();
 
   const topicOptions = [
     { label: "Tất cả chủ đề", value: "all" },
@@ -96,12 +99,15 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
         {posts.map((post) => {
           const { tagStyle, imgBg } = getCategoryStyle(post.categorySlug);
           return (
-            <Link
+            <article
               key={post.id}
-              href={`/posts/${post.slug}`}
               className="w-full border-b border-[#f1ddd8] bg-white transition-colors hover:bg-rose-50"
             >
-              <article className="mx-auto flex max-w-5xl flex-col gap-10 px-6 py-8 md:flex-row md:items-center">
+              <div className="mx-auto flex max-w-5xl flex-col gap-5 px-6 py-8 md:flex-row md:items-center md:gap-10">
+                <Link
+                  href={`/posts/${post.slug}`}
+                  className="contents"
+                >
                 <div
                   className={`flex h-[110px] w-full flex-shrink-0 items-center justify-center rounded-[14px] border border-rose-200/65 text-[40px] shadow-sm transition-transform hover:scale-105 md:w-[160px] ${imgBg}`}
                 >
@@ -128,8 +134,18 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
                     luận
                   </div>
                 </div>
-              </article>
-            </Link>
+                </Link>
+
+                {isAdmin && (
+                  <PostActions
+                    postId={post.id}
+                    slug={post.slug}
+                    canView
+                    className="shrink-0 justify-start md:w-[150px] md:justify-end"
+                  />
+                )}
+              </div>
+            </article>
           );
         })}
       </section>
@@ -149,4 +165,21 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
       )}
     </div>
   );
+}
+
+async function getIsAdmin() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return false;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("app_role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  return profile?.app_role === "admin";
 }
