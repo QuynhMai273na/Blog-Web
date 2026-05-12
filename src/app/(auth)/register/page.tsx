@@ -86,7 +86,7 @@ export default function RegisterPage() {
           className="mb-2 mt-0 font-serif text-2xl font-semibold leading-[1.2]"
         >
           <span className="text-[#d96e83]">Becoming </span>
-          <span className="text-[#6b9b84] italic">Blooming</span>
+          <span className="text-[#6b9b84] ">Blooming</span>
         </h1>
 
         <p className="mb-5 mt-0 font-sans text-xs leading-normal text-[#b09090]">

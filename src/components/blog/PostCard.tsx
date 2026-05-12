@@ -70,11 +70,11 @@ const PostCard: React.FC<PostCardProps> = ({
   return (
     <Link
       href={`/posts/${slug}`}
-      className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
+      className="block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
     >
       <article
         className={[
-          "group overflow-hidden rounded-[24px] border border-[#f0e6e0] bg-white shadow-[0_4px_24px_rgba(74,44,42,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(74,44,42,0.08)]",
+          "group h-full overflow-hidden rounded-[24px] border border-[#f0e6e0] bg-white shadow-[0_4px_24px_rgba(74,44,42,0.04)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_32px_rgba(74,44,42,0.08)]",
           horizontal ? "flex flex-col md:flex-row" : "flex flex-col",
         ].join(" ")}
       >

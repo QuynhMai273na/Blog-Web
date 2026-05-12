@@ -14,20 +14,24 @@ interface CustomSelectProps {
   options: SelectOption[];
   name?: string;
   defaultValue?: string;
+  value?: string;
   placeholder?: string;
   className?: string;
   buttonClassName?: string;
   panelClassName?: string;
+  onChange?: (value: string) => void;
 }
 
 export default function CustomSelect({
   options,
   name,
   defaultValue,
+  value,
   placeholder,
   className,
   buttonClassName,
   panelClassName,
+  onChange,
 }: CustomSelectProps) {
   const fallbackValue = defaultValue ?? options[0]?.value ?? "";
   const [open, setOpen] = useState(false);
@@ -47,11 +51,18 @@ export default function CustomSelect({
     return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
 
-  const selectedOption = options.find((option) => option.value === selectedValue);
+  const currentValue = value ?? selectedValue;
+  const selectedOption = options.find((option) => option.value === currentValue);
+
+  function handleSelect(nextValue: string) {
+    setSelectedValue(nextValue);
+    onChange?.(nextValue);
+    setOpen(false);
+  }
 
   return (
     <div ref={rootRef} className={cn("relative", className)}>
-      {name ? <input type="hidden" name={name} value={selectedValue} /> : null}
+      {name ? <input type="hidden" name={name} value={currentValue} /> : null}
 
       <button
         id={buttonId}
@@ -85,7 +96,7 @@ export default function CustomSelect({
           )}
         >
           {options.map((option) => {
-            const isSelected = option.value === selectedValue;
+            const isSelected = option.value === currentValue;
 
             return (
               <button
@@ -93,10 +104,7 @@ export default function CustomSelect({
                 type="button"
                 role="option"
                 aria-selected={isSelected}
-                onClick={() => {
-                  setSelectedValue(option.value);
-                  setOpen(false);
-                }}
+                onClick={() => handleSelect(option.value)}
                 className="flex w-full items-center justify-between px-5 py-3.5 text-left text-[14px] font-medium text-[#5a4545] transition-colors duration-150 hover:bg-rose-50 hover:text-rose-400"
               >
                 <span>{option.label}</span>

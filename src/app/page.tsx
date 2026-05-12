@@ -1,12 +1,40 @@
 import PostCard from "@/components/blog/PostCard";
+import {
+  BLOG_CATEGORY_SLUGS,
+  type BlogCategorySlug,
+} from "@/constants/categories";
 import Link from "next/link";
-import { getCategoryOptions, getPublishedPosts } from "@/services/post.service";
+import {
+  getCategoryOptions,
+  getLatestPostsByCategorySlugs,
+  getPublishedPosts,
+} from "@/services/post.service";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+type HomePageProps = {
+  searchParams?: Promise<{ cat?: string }>;
+};
+
+function isBlogCategorySlug(value: string): value is BlogCategorySlug {
+  return BLOG_CATEGORY_SLUGS.includes(value as BlogCategorySlug);
+}
+
+function getCategoryIcon(slug: string) {
+  if (slug === "yoga") return "🧘";
+  if (slug === "finance") return "💰";
+  if (slug === "parenting") return "👶";
+  return "🌻";
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const params = await searchParams;
+  const categorySlug =
+    params?.cat && isBlogCategorySlug(params.cat) ? params.cat : undefined;
   const [recentPosts, categories] = await Promise.all([
-    getPublishedPosts({ limit: 3 }),
+    categorySlug
+      ? getPublishedPosts({ categorySlug, limit: 4 })
+      : getLatestPostsByCategorySlugs(BLOG_CATEGORY_SLUGS),
     getCategoryOptions(),
   ]);
 
@@ -29,39 +57,50 @@ export default async function HomePage() {
           <span style={{ fontSize: 28 }}>🌸</span>
         </div>
 
-        <p className="mx-auto mb-5 max-w-[700px] font-serif text-[14px] font-normal italic tracking-[2px] text-[#6c8f7a]">
-          - hành trình phát triển bản thân -
-        </p>
-
         <h1 className="mx-auto mb-0 max-w-[700px] font-serif text-[40px] font-normal leading-[1.4] tracking-normal text-[#3d2f2f] sm:text-[48px]">
           Chầm chậm{" "}
-          <em className="font-medium italic text-[#e58a8a]">lớn lên</em>
+          <em className="font-medium not-italic text-[#e58a8a]">lớn lên</em>
           ,<br />
           dịu dàng{" "}
-          <em className="font-medium italic text-[#6c8f7a]">nở hoa</em>
+          <em className="font-medium not-italic text-[#6c8f7a]">nở hoa</em>
         </h1>
 
-        <p className="mx-auto mt-[15px] max-w-[700px] font-serif text-[16px] italic text-[#8a7f7f]">
+        <p className="mx-auto mt-[15px] max-w-[700px] font-serif text-[25px] italic text-[#8a7f7f]">
           Slowly becoming, beautifully blooming
         </p>
-        <p className="mx-auto mt-2.5 max-w-[700px] font-sans text-[13px] tracking-[0.5px] text-[#8a8a8a]">
-          Một trang nhật ký về parenting · yoga · tài chính · bài học cuộc sống
+        <p className="mx-auto mt-2.5 max-w-[700px] font-sans text-base tracking-[0.5px] text-[#8a8a8a]">
+          Một trang nhật ký về yoga · parenting · tài chính cá nhân · cuộc sống
         </p>
       </section>
 
       <div className="mb-10 flex flex-wrap justify-center gap-6 border-y border-rose-100 bg-white px-4 py-4 shadow-xs">
         <Link
-          href="/posts"
-          className="rounded-full border border-sage-500 bg-sage-50 px-4 py-1.5 font-sans text-[12px] font-medium text-sage-500 transition-all"
+          // href="/#latest-posts"
+          href="/"
+          scroll={false}
+          className={[
+            "inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 font-sans text-[12px] transition-all",
+            !categorySlug
+              ? "border-sage-500 bg-sage-50 font-medium text-sage-500"
+              : "border-rose-100 text-sage-800 hover:border-rose-200 hover:text-sage-800",
+          ].join(" ")}
         >
           🌿 Tất cả
         </Link>
         {categories.map((category) => (
           <Link
             key={category.value}
-            href={`/category/${category.value}`}
-            className="rounded-full border border-rose-100 px-4 py-1.5 font-sans text-[12px] text-sage-800 transition-all hover:border-rose-200 hover:text-sage-800"
+            // href={`/?cat=${category.value}#latest-posts`}
+            href={`/?cat=${category.value}`}
+            scroll={false}
+            className={[
+              "inline-flex items-center gap-1.5 rounded-full border px-4 py-1.5 font-sans text-[12px] transition-all",
+              categorySlug === category.value
+                ? "border-sage-500 bg-sage-50 font-medium text-sage-500"
+                : "border-rose-100 text-sage-800 hover:border-rose-200 hover:text-sage-800",
+            ].join(" ")}
           >
+            <span aria-hidden>{getCategoryIcon(category.value)}</span>
             {category.label}
           </Link>
         ))}
@@ -75,7 +114,7 @@ export default async function HomePage() {
           >
             Bài viết mới nhất
           </h2>
-          <p className="font-serif text-base italic text-sage-800/85">
+          <p className="font-serif text-base  text-sage-800/85">
             những câu chuyện thật, từ cuộc sống thật
           </p>
 
@@ -87,8 +126,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto w-full bg-sand-100 p-8">
-        <div className="mx-auto grid max-w-5xl grid-cols-1 items-center justify-center gap-8 sm:grid-cols-2 md:grid-cols-3">
+      <section id="latest-posts" className="mx-auto w-full bg-sand-100 p-8">
+        <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,18rem)] justify-center gap-8 sm:grid-cols-[repeat(auto-fit,minmax(16rem,18rem))]">
           {recentPosts.map((post) => (
             <PostCard key={post.slug} {...post} />
           ))}
@@ -101,12 +140,11 @@ export default async function HomePage() {
             Xem tất cả bài viết
           </Link>
         </div>
-        <h2 className="my-2 font-serif text-3xl font-bold italic tracking-[1px] text-sage-800/90">
+        <h2 className="my-2 font-serif text-3xl font-bold  tracking-[1px] text-sage-800/90">
           Cùng mình đi qua hành trình mỗi tuần nhé
         </h2>
-        <p className="mb-8 font-serif text-[13px] italic text-sage-800">
-          Nhận bài viết mới qua email - không spam, chỉ có chuyện thật từ trái
-          tim
+        <p className="mb-8 font-serif text-[13px]  text-sage-800">
+          Đăng ký email để nhận thông báo về những bài viết mới nhất.
         </p>
 
         <form className="mx-auto flex max-w-md flex-col gap-3 sm:flex-row">

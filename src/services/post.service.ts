@@ -1,4 +1,10 @@
+import {
+  BLOG_CATEGORIES,
+  getBlogCategoryLabel,
+} from "@/constants/categories";
 import { createClient } from "@/lib/supabase/server";
+
+type PostStatus = "draft" | "scheduled" | "published";
 
 export type PostCategory = "Yoga" | "Tài chính" | "Parenting" | "Cuộc sống";
 
@@ -11,8 +17,11 @@ export type BlogPostSummary = {
   categoryLabel: string;
   categorySlug: string;
   date: string;
+  publishTime: string;
+  tags: string[];
   readTime: string;
   commentCount: number;
+  status?: PostStatus;
 };
 
 export type BlogPostDetail = BlogPostSummary & {
@@ -37,22 +46,26 @@ type PostRow = {
   content: string | null;
   published_at: string | null;
   created_at: string | null;
+  tags?: string[] | null;
+  status?: string | null;
   categories: CategoryRow | CategoryRow[] | null;
 };
 
 export async function getPublishedPosts(options?: {
   limit?: number;
   categorySlug?: string;
+  orderBy?: "published_at" | "created_at";
 }) {
   const supabase = createClient();
   const selectClause =
-    "id,title,slug,summary,content,published_at,created_at,categories!inner(name,slug)";
+    "id,title,slug,summary,content,published_at,created_at,tags,categories!inner(name,slug)";
 
   let query = supabase
     .from("posts")
     .select(selectClause)
-    .eq("status", "published")
-    .order("published_at", { ascending: false });
+    .in("status", ["published", "scheduled"])
+    .lte("published_at", new Date().toISOString())
+    .order(options?.orderBy ?? "published_at", { ascending: false });
 
   if (options?.categorySlug) {
     query = query.eq("categories.slug", options.categorySlug);
@@ -72,15 +85,26 @@ export async function getPublishedPosts(options?: {
   return attachCommentCounts((data ?? []) as PostRow[]);
 }
 
+export async function getLatestPostsByCategorySlugs(categorySlugs: string[]) {
+  const postsByCategory = await Promise.all(
+    categorySlugs.map((categorySlug) =>
+      getPublishedPosts({ categorySlug, limit: 1 }),
+    ),
+  );
+
+  return postsByCategory.flatMap((posts) => posts);
+}
+
 export async function getPostBySlug(slug: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("posts")
     .select(
-      "id,title,slug,summary,content,published_at,created_at,categories(name,slug)",
+      "id,title,slug,summary,content,published_at,created_at,tags,categories(name,slug)",
     )
     .eq("slug", slug)
-    .eq("status", "published")
+    .in("status", ["published", "scheduled"])
+    .lte("published_at", new Date().toISOString())
     .maybeSingle();
 
   if (error) {
@@ -106,21 +130,45 @@ export async function getRelatedPosts(post: BlogPostSummary, limit = 3) {
 }
 
 export async function getCategoryOptions() {
+  return BLOG_CATEGORIES.map((category) => ({
+    label: category.label,
+    value: category.slug,
+  }));
+}
+
+export async function getAdminPosts(options?: { limit?: number }) {
   const supabase = createClient();
-  const { data, error } = await supabase
-    .from("categories")
-    .select("name,slug")
-    .order("name");
+  await publishDueScheduledPosts(supabase);
+
+  let query = supabase
+    .from("posts")
+    .select("id,title,slug,summary,content,published_at,created_at,status,tags,categories(name,slug)")
+    .order("created_at", { ascending: false });
+
+  if (options?.limit) {
+    query = query.limit(options.limit);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
-    console.error("[categories.list]", error);
+    console.error("[posts.adminList]", error);
     return [];
   }
 
-  return (data ?? []).map((category) => ({
-    label: getCategoryLabel(category.slug, category.name),
-    value: category.slug,
-  }));
+  return attachCommentCounts((data ?? []) as PostRow[]);
+}
+
+async function publishDueScheduledPosts(supabase: ReturnType<typeof createClient>) {
+  const { error } = await supabase
+    .from("posts")
+    .update({ status: "published" })
+    .eq("status", "scheduled")
+    .lte("published_at", new Date().toISOString());
+
+  if (error) {
+    console.error("[posts.publishDueScheduled]", error);
+  }
 }
 
 async function attachCommentCounts(rows: PostRow[]) {
@@ -152,6 +200,7 @@ function toPostSummary(post: PostRow, commentCount: number): BlogPostSummary {
   const category = getSingleCategory(post.categories);
   const categorySlug = category?.slug ?? "life";
   const content = post.content ?? "";
+  const effectiveStatus = getEffectiveStatus(post.status, post.published_at);
 
   return {
     id: post.id,
@@ -162,8 +211,11 @@ function toPostSummary(post: PostRow, commentCount: number): BlogPostSummary {
     categoryLabel: getCategoryLabel(categorySlug, category?.name),
     categorySlug,
     date: formatDate(post.published_at ?? post.created_at),
+    publishTime: formatDateTime(post.published_at),
+    tags: post.tags ?? [],
     readTime: getReadTime(content),
     commentCount,
+    status: effectiveStatus,
   };
 }
 
@@ -191,11 +243,7 @@ function getPostCategory(slug: string): PostCategory {
 }
 
 function getCategoryLabel(slug: string | null, fallback?: string | null) {
-  if (slug === "yoga") return "Yoga & Sức khỏe";
-  if (slug === "finance") return "Tài chính";
-  if (slug === "parenting") return "Parenting";
-  if (slug === "life") return "Cuộc sống";
-  return fallback ?? "Cuộc sống";
+  return getBlogCategoryLabel(slug, fallback);
 }
 
 function formatDate(value: string | null) {
@@ -206,6 +254,30 @@ function formatDate(value: string | null) {
     month: "long",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) return "";
+
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function getEffectiveStatus(
+  status: string | null | undefined,
+  publishedAt: string | null,
+): PostStatus {
+  if (status === "scheduled" && publishedAt && new Date(publishedAt).getTime() <= Date.now()) {
+    return "published";
+  }
+  if (status === "scheduled") return "scheduled";
+  if (status === "published") return "published";
+  return "draft";
 }
 
 function getReadTime(content: string) {

@@ -32,7 +32,7 @@ const contactMethods = [
   {
     icon: MapPin,
     label: "Địa điểm",
-    value: "Việt Nam",
+    value: "Hô Chí Minh, Việt Nam",
   },
 ];
 
@@ -102,13 +102,13 @@ export default function ContactPage() {
 
       <section className="mx-auto max-w-6xl">
         <div className="mb-8 text-center animate-bloom [animation-delay:120ms] [animation-fill-mode:both]">
-          <p className="mb-3 font-serif text-[13px] italic tracking-[0.2em] text-sage-800/55">
+          <p className="mb-3 font-serif text-[13px]  tracking-[0.2em] text-sage-800/55">
             — contact & kind conversations —
           </p>
-          <h1 className="mx-auto max-w-3xl font-serif text-[2.25rem] font-normal leading-[1.35] tracking-normal text-[#3d2f2f] md:text-[3.5rem]">
+          <h1 className="mx-auto max-w-3xl font-serif text-3xl leading-[1.35] tracking-normal text-[#3d2f2f] md:text-[40px]">
             Nếu bạn muốn trò chuyện,
-            <span className="block font-medium italic text-rose-200">
-              mình luôn ở đây để lắng nghe
+            <span className="block font-medium  text-rose-300">
+              mình luôn ở đây lắng nghe
             </span>
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-[14px] leading-7 text-[#7f6e6e] md:text-[15px]">
@@ -135,7 +135,7 @@ export default function ContactPage() {
                 Một góc nhỏ để kết nối
               </div>
 
-              <h2 className="mt-6 font-serif text-base font-normal leading-[1.35] text-[#4a3737] md:text-[2.8rem]">
+              <h2 className="mt-6 font-serif text-base font-normal  text-[#4a3737] md:text-[36px]">
                 Nói chuyện với mình nhé
               </h2>
               <p className="mt-5 max-w-xl text-[15px] leading-8 text-[#6d5a5a]">
@@ -171,6 +171,12 @@ export default function ContactPage() {
                     <Link
                       key={label}
                       href={href}
+                      target={href.startsWith("http") ? "_blank" : undefined}
+                      rel={
+                        href.startsWith("http")
+                          ? "noopener noreferrer"
+                          : undefined
+                      }
                       className="block rounded-[28px] focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
                     >
                       {content}
@@ -182,7 +188,7 @@ export default function ContactPage() {
               <div className="my-8 h-px bg-gradient-to-r from-rose-100 via-rose-200/70 to-transparent" />
 
               <div className="rounded-[30px] border border-rose-200/80 bg-gradient-to-br from-[#fffdf9] to-[#fff6f7] p-6 shadow-[0_14px_40px_rgba(214,156,161,0.08)]">
-                <p className="font-serif text-[17px] italic text-[#7f6666]">
+                <p className="font-serif text-[17px]  text-[#7f6666]">
                   Mình cũng có mặt ở đây:
                 </p>
                 <div className="mt-5 flex flex-wrap gap-3">
@@ -190,6 +196,8 @@ export default function ContactPage() {
                     <Link
                       key={item.label}
                       href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-5 py-3 text-[13px] font-semibold text-[#6c5151] shadow-[0_10px_24px_rgba(214,156,161,0.12)] transition-all duration-300 hover:-translate-y-0.5 hover:border-rose-300 hover:text-rose-400"
                     >
                       {/* {index === 0 && <Instagram className="h-4 w-4" />} */}
@@ -213,7 +221,7 @@ export default function ContactPage() {
             />
 
             <div className="relative">
-              <h2 className="font-serif text-base font-normal leading-[1.35] text-[#3d2f2f] md:text-[2.8rem]">
+              <h2 className="font-serif text-base font-normal  text-[#3d2f2f] md:text-[36px]">
                 Gửi tin nhắn
               </h2>
               <p className="mt-3 max-w-lg text-[14px] leading-7 text-[#7a6f6f]">
@@ -257,7 +265,7 @@ export default function ContactPage() {
                   <textarea
                     rows={6}
                     placeholder="Chia sẻ điều bạn muốn nói với mình..."
-                    className="input-field min-h-40 resize-none overflow-hidden rounded-[24px] border-rose-200 bg-white px-5 py-4 text-[15px] text-[#5a4545] shadow-[0_8px_24px_rgba(214,156,161,0.08)] placeholder:font-serif placeholder:text-[15px] placeholder:italic placeholder:text-[#a88e8e] focus:border-rose-300 focus:ring-rose-200"
+                    className="input-field min-h-40 resize-none overflow-hidden rounded-[24px] border-rose-200 bg-white px-5 py-4 text-[15px] text-[#5a4545] shadow-[0_8px_24px_rgba(214,156,161,0.08)] placeholder:font-serif placeholder:text-[15px] placeholder: placeholder:text-[#a88e8e] focus:border-rose-300 focus:ring-rose-200"
                   />
                 </label>
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
+import { LayoutDashboard, LogOut, PenLine, UserRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/services/auth.service";
 
@@ -11,6 +12,7 @@ type Profile = {
   display_name: string | null;
   avatar_url: string | null;
   email: string | null;
+  app_role: string | null;
 };
 
 export default function AuthAvatarMenu() {
@@ -26,7 +28,7 @@ export default function AuthAvatarMenu() {
     const supabase = createClient();
     const { data, error } = await supabase
       .from("profiles")
-      .select("display_name, avatar_url, email")
+      .select("display_name, avatar_url, email, app_role")
       .eq("id", userId)
       .maybeSingle();
 
@@ -114,6 +116,7 @@ export default function AuthAvatarMenu() {
     "User";
   const email = profile?.email ?? user.email;
   const avatarUrl = profile?.avatar_url ?? user.user_metadata.avatar_url;
+  const isAdmin = profile?.app_role === "admin";
 
   return (
     <div ref={menuRef} className="relative">
@@ -156,17 +159,41 @@ export default function AuthAvatarMenu() {
             href="/profile"
             role="menuitem"
             onClick={() => setIsOpen(false)}
-            className="block px-4 py-2.5 font-sans text-sm text-[#667568] transition hover:bg-[#fff5f6] hover:text-[#c85f70]"
+            className="flex items-center gap-2 px-4 py-2.5 font-sans text-sm text-[#667568] transition hover:bg-[#fff5f6] hover:text-[#c85f70]"
           >
+            <UserRound className="h-4 w-4" aria-hidden="true" />
             My profile
           </Link>
+          {isAdmin && (
+            <Link
+              href="/dashboard/write"
+              role="menuitem"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2 px-4 py-2.5 font-sans text-sm font-semibold text-[#c85f70] transition hover:bg-[#fff5f6]"
+            >
+              <PenLine className="h-4 w-4" aria-hidden="true" />
+              Viết bài mới
+            </Link>
+          )}
+          {/* {isAdmin && (
+            <Link
+              href="/dashboard"
+              role="menuitem"
+              onClick={() => setIsOpen(false)}
+              className="flex items-center gap-2 px-4 py-2.5 font-sans text-sm font-semibold text-[#c85f70] transition hover:bg-[#fff5f6]"
+            >
+              <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
+              Dashboard
+            </Link>
+          )} */}
           <button
             type="button"
             role="menuitem"
             onClick={handleSignOut}
             disabled={isSigningOut}
-            className="block w-full px-4 py-2.5 text-left font-sans text-sm text-[#be123c] transition hover:bg-[#fff1f2] disabled:cursor-not-allowed disabled:opacity-70"
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-left font-sans text-sm text-[#be123c] transition hover:bg-[#fff1f2] disabled:cursor-not-allowed disabled:opacity-70"
           >
+            <LogOut className="h-4 w-4" aria-hidden="true" />
             {isSigningOut ? "Đang đăng xuất..." : "Đăng xuất"}
           </button>
         </div>
