@@ -14,6 +14,7 @@ type CreatePostPayload = {
   scheduledAt?: string | null;
   coverImage?: string | null;
   coverFileName?: string;
+  tags?: string[];
 };
 
 export async function POST(request: Request) {
@@ -75,6 +76,7 @@ export async function POST(request: Request) {
 
   const slug = await createUniqueSlug(supabase, payload.title!.trim());
   const status = getPostStatus(payload.publishMode);
+  const tags = normalizeTags(payload.tags);
   const thumbnailUrl = await uploadCoverImage({
     supabase,
     slug,
@@ -91,6 +93,7 @@ export async function POST(request: Request) {
       summary: payload.excerpt!.trim(),
       category_id: category.id,
       thumbnail_url: thumbnailUrl,
+      tags,
       status,
       published_at:
         status === "published"
@@ -116,6 +119,19 @@ export async function POST(request: Request) {
   revalidatePath(`/category/${categorySlug}`);
 
   return NextResponse.json({ post });
+}
+
+function normalizeTags(tags: unknown) {
+  if (!Array.isArray(tags)) return [];
+
+  return Array.from(
+    new Set(
+      tags
+        .filter((tag): tag is string => typeof tag === "string")
+        .map((tag) => tag.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  ).slice(0, 12);
 }
 
 function validatePayload(payload: CreatePostPayload | null) {

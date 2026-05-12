@@ -162,8 +162,11 @@ export default async function DashboardPage() {
                   {post.categoryLabel}
                 </div>
                 <div>
-                  <span className="inline-flex rounded-full border border-[#d1e7dd] bg-[#f1f8f5] px-3 py-1 text-[11px] font-medium text-[#6b9b84]">
-                    {getStatusLabel(post.status)}
+                  <span className="inline-flex flex-col rounded-full border border-[#d1e7dd] bg-[#f1f8f5] px-3 py-1 text-[11px] font-medium leading-4 text-[#6b9b84]">
+                    <span>{getStatusLabel(post.status)}</span>
+                    <span className="font-normal text-[#7c9283]">
+                      {getStatusTimeLabel(post.status, post.publishTime)}
+                    </span>
                   </span>
                 </div>
 
@@ -185,4 +188,11 @@ function getStatusLabel(status?: string) {
   if (status === "published") return "Đã đăng";
   if (status === "scheduled") return "Đã lên lịch";
   return "Bản nháp";
+}
+
+function getStatusTimeLabel(status?: string, publishTime?: string) {
+  if (!publishTime) return "Chưa có lịch đăng";
+  if (status === "scheduled") return `Lên lịch: ${publishTime}`;
+  if (status === "published") return `Đăng: ${publishTime}`;
+  return "Chưa đăng";
 }

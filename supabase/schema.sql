@@ -29,7 +29,8 @@ CREATE TABLE posts (
   category_id uuid REFERENCES categories(id) ON DELETE SET NULL,
   thumbnail_url text,
   summary text,
-  status text DEFAULT 'draft'
+  status text DEFAULT 'draft',
+  tags text[] NOT NULL DEFAULT '{}'
 );
 
 CREATE TABLE comments (

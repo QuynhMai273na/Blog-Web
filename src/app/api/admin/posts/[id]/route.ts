@@ -14,6 +14,7 @@ type UpdatePostPayload = {
   scheduledAt?: string | null;
   coverImage?: string | null;
   coverFileName?: string;
+  tags?: string[];
 };
 
 type RouteContext = {
@@ -28,7 +29,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const { data: post, error } = await auth.supabase
     .from("posts")
     .select(
-      "id,title,slug,summary,content,published_at,status,thumbnail_url,categories(slug)",
+      "id,title,slug,summary,content,published_at,status,thumbnail_url,tags,categories(slug)",
     )
     .eq(isUuid(id) ? "id" : "slug", id)
     .maybeSingle();
@@ -86,6 +87,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const status = getPostStatus(payload.publishMode);
+  const tags = normalizeTags(payload.tags);
   const thumbnailUrl = await uploadCoverImage({
     supabase: auth.supabase,
     slug: currentPost.slug,
@@ -101,6 +103,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       summary: payload.excerpt!.trim(),
       category_id: category.id,
       thumbnail_url: thumbnailUrl ?? currentPost.thumbnail_url,
+      tags,
       status,
       published_at:
         status === "published"
@@ -120,6 +123,19 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   revalidatePostPaths(categorySlug, post.slug);
   return NextResponse.json({ post });
+}
+
+function normalizeTags(tags: unknown) {
+  if (!Array.isArray(tags)) return [];
+
+  return Array.from(
+    new Set(
+      tags
+        .filter((tag): tag is string => typeof tag === "string")
+        .map((tag) => tag.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+  ).slice(0, 12);
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
