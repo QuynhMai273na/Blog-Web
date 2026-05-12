@@ -189,15 +189,27 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
 
             <div className="rounded-[30px] border border-white/90 bg-[#fffefd]/95 p-6 shadow-[0_24px_70px_rgba(45,62,47,0.1)] ring-1 ring-rose-100/70 backdrop-blur-md">
               <h3 className="border-b border-rose-100 pb-3 font-serif text-[1.55rem] font-normal text-[#3d2f2f]">
-                Chủ đề
+                Tags
               </h3>
-              <div className="mt-4">
-                <Link
-                  href={`/category/${post.categorySlug}`}
-                  className="rounded-full border border-sage-100 bg-sage-50 px-3 py-1 text-[12px] font-medium text-[#6c8f7a] shadow-sm"
-                >
-                  {post.categoryLabel}
-                </Link>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {post.tags.length > 0 ? (
+                  post.tags.map((tag, index) => (
+                    <span
+                      key={`${tag}-${index}`}
+                      className={`rounded-full border px-3 py-1 text-[12px] font-medium shadow-sm ${
+                        index % 3 === 0
+                          ? "border-rose-100 bg-rose-50 text-[#c27d85]"
+                          : index % 3 === 1
+                            ? "border-sage-100 bg-sage-50 text-[#6c8f7a]"
+                            : "border-sand-200 bg-[#fcf5ea] text-[#b78a54]"
+                      }`}
+                    >
+                      #{tag}
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-[13px] text-[#9b8888]">Chưa có tag</p>
+                )}
               </div>
             </div>
 

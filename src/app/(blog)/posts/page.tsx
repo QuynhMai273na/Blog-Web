@@ -5,10 +5,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getCategoryOptions, getPublishedPosts } from "@/services/post.service";
 
 type PostsPageProps = {
-  searchParams?: Promise<{ cat?: string }>;
+  searchParams?: Promise<{ cat?: string; page?: string }>;
 };
 
 export const dynamic = "force-dynamic";
+const POSTS_PER_PAGE = 4;
 
 const CATEGORY_STYLES: Record<string, { tagStyle: string; imgBg: string }> = {
   yoga: {
@@ -49,11 +50,21 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
   const params = await searchParams;
   const categorySlug =
     params?.cat && params.cat !== "all" ? params.cat : undefined;
-  const [posts, categories] = await Promise.all([
+  const requestedPage = Number(params?.page ?? "1");
+  const [allPosts, categories] = await Promise.all([
     getPublishedPosts({ categorySlug, orderBy: "created_at" }),
     getCategoryOptions(),
   ]);
   const isAdmin = await getIsAdmin();
+  const totalPages = Math.max(1, Math.ceil(allPosts.length / POSTS_PER_PAGE));
+  const currentPage = Math.min(
+    Math.max(Number.isFinite(requestedPage) ? requestedPage : 1, 1),
+    totalPages,
+  );
+  const posts = allPosts.slice(
+    (currentPage - 1) * POSTS_PER_PAGE,
+    currentPage * POSTS_PER_PAGE,
+  );
 
   const topicOptions = [
     { label: "Tất cả chủ đề", value: "all" },
@@ -150,6 +161,58 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
         })}
       </section>
 
+      {allPosts.length > POSTS_PER_PAGE && (
+        <section className="w-full bg-[#fdfcf8] py-6">
+          <div className="flex flex-wrap items-center justify-center gap-3 px-4">
+            {currentPage > 1 ? (
+              <Link
+                href={getPaginationHref({ categorySlug, page: currentPage - 1 })}
+                className="rounded-full border border-[#f1ddd8] bg-white px-5 py-2.5 text-sm font-medium text-sage-800 shadow-sm transition-colors hover:bg-[#fff5f6] hover:text-[#d96e83]"
+              >
+                ← Trước
+              </Link>
+            ) : (
+              <span className="rounded-full border border-[#f1ddd8] bg-white px-5 py-2.5 text-sm font-medium text-sage-800/35 shadow-sm">
+                ← Trước
+              </span>
+            )}
+
+            {Array.from({ length: totalPages }, (_, index) => {
+              const page = index + 1;
+              const isActive = page === currentPage;
+
+              return (
+                <Link
+                  key={page}
+                  href={getPaginationHref({ categorySlug, page })}
+                  aria-current={isActive ? "page" : undefined}
+                  className={
+                    isActive
+                      ? "flex h-10 w-10 items-center justify-center rounded-full bg-[#d96e83] text-sm font-bold text-white shadow-md transition-colors hover:bg-[#c85f70]"
+                      : "flex h-10 w-10 items-center justify-center rounded-full border border-[#f1ddd8] bg-white text-sm font-medium text-sage-800 shadow-sm transition-colors hover:bg-[#fff5f6] hover:text-[#d96e83]"
+                  }
+                >
+                  {page}
+                </Link>
+              );
+            })}
+
+            {currentPage < totalPages ? (
+              <Link
+                href={getPaginationHref({ categorySlug, page: currentPage + 1 })}
+                className="rounded-full border border-[#f1ddd8] bg-white px-5 py-2.5 text-sm font-medium text-sage-800 shadow-sm transition-colors hover:bg-[#fff5f6] hover:text-[#d96e83]"
+              >
+                Sau →
+              </Link>
+            ) : (
+              <span className="rounded-full border border-[#f1ddd8] bg-white px-5 py-2.5 text-sm font-medium text-sage-800/35 shadow-sm">
+                Sau →
+              </span>
+            )}
+          </div>
+        </section>
+      )}
+
       {posts.length === 0 && (
         <section className="flex w-full flex-1 items-center justify-center px-6 py-10">
           <div className="w-full max-w-2xl rounded-3xl border border-rose-100 bg-[#fdfcf8] p-10 text-center shadow-sm">
@@ -165,6 +228,21 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
       )}
     </div>
   );
+}
+
+function getPaginationHref({
+  categorySlug,
+  page,
+}: {
+  categorySlug?: string;
+  page: number;
+}) {
+  const params = new URLSearchParams();
+  if (categorySlug) params.set("cat", categorySlug);
+  if (page > 1) params.set("page", String(page));
+
+  const query = params.toString();
+  return query ? `/posts?${query}` : "/posts";
 }
 
 async function getIsAdmin() {

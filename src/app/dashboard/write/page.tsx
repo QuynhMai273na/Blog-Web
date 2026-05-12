@@ -74,12 +74,6 @@ type PublishOption = {
 
 const publishOptions: PublishOption[] = [
   {
-    value: "draft",
-    label: "Bản nháp",
-    helper: "Có thể chỉnh sửa",
-    dot: "bg-[#a58f8f]",
-  },
-  {
     value: "scheduled",
     label: "Lên lịch",
     helper: "Đợi giờ đăng",
@@ -263,8 +257,6 @@ function WritePageContent() {
   const [category, setCategory] = useState<BlogCategorySlug>(categoryOptions[0].value);
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [seoTitle, setSeoTitle] = useState("");
-  const [seoDescription, setSeoDescription] = useState("");
   const [authState, setAuthState] = useState<"loading" | "admin" | "forbidden">("loading");
   const [notice, setNotice] = useState<NoticeState>(null);
   const [isSaving, setIsSaving] = useState<SaveIntent | null>(null);
@@ -280,8 +272,7 @@ function WritePageContent() {
     publish: true,
     cover: false,
     category: false,
-    seo: false,
-    options: false,
+       options: false,
   });
 
   const editor = useEditor({
@@ -477,8 +468,7 @@ function WritePageContent() {
         html: editor?.getHTML() ?? "",
         category,
         tags,
-        seoTitle,
-        seoDescription,
+      
         coverImage,
         coverFileName,
         publishMode: requestedMode,
@@ -1011,67 +1001,7 @@ function WritePageContent() {
                 </button>
               </div>
             </SidebarSection>
-
-            <SidebarSection
-              id="seo"
-              icon={Search}
-              title="SEO"
-              iconColor="text-[#9ba7b7]"
-              open={sidebarOpen.seo}
-              onToggle={toggleSidebar}
-            >
-              <label
-                htmlFor="seo-title"
-                className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#a58f8f]"
-              >
-                Tiêu đề SEO
-              </label>
-              <input
-                id="seo-title"
-                value={seoTitle}
-                onChange={(e) => setSeoTitle(e.target.value)}
-                className="mt-2 w-full rounded-[14px] border border-transparent bg-[#2f2d2b] px-4 py-2.5 text-sm text-white outline-none"
-              />
-              <p
-                className={`mt-1 text-right text-[11px] ${seoTitle.length > 60 ? "text-rose-400" : "text-[#9b8888]"}`}
-              >
-                {seoTitle.length} / 60
-              </p>
-
-              <label
-                htmlFor="seo-desc"
-                className="mt-3 block text-[11px] font-semibold uppercase tracking-[0.22em] text-[#a58f8f]"
-              >
-                Mô tả
-              </label>
-              <textarea
-                id="seo-desc"
-                value={seoDescription}
-                onChange={(e) => setSeoDescription(e.target.value)}
-                className="mt-2 min-h-[80px] w-full rounded-[14px] border border-transparent bg-[#2f2d2b] px-4 py-2.5 text-sm italic leading-7 text-white outline-none"
-              />
-              <p
-                className={`mt-1 text-right text-[11px] ${seoDescription.length > 160 ? "text-rose-400" : "text-[#9b8888]"}`}
-              >
-                {seoDescription.length} / 160
-              </p>
-
-              <div className="mt-4 rounded-[18px] border border-rose-100 bg-white p-4 shadow-sm">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b09292]">
-                  Xem trước Google
-                </p>
-                <p className="text-[11px] text-[#5f8f65]">
-                  becomingblooming.com › yoga
-                </p>
-                <p className="mt-1 text-[1.2rem] leading-[1.25] text-[#2f5bd3]">
-                  {seoTitle || title}
-                </p>
-                <p className="mt-1 text-[13px] leading-6 text-[#5d5d5d]">
-                  {seoDescription || excerpt}
-                </p>
-              </div>
-            </SidebarSection>
-
+    
             <SidebarSection
               id="options"
               icon={Check}
@@ -1114,7 +1044,7 @@ function WritePageContent() {
             <div className="sticky top-0 z-10 flex items-center justify-between border-b border-rose-100 bg-white/95 px-5 py-3 shadow-[0_12px_30px_rgba(45,62,47,0.08)] backdrop-blur-md">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b09292]">
-                  Web preview
+                  Xem trước bài viết
                 </p>
                 <p className="mt-0.5 text-sm font-medium text-[#5c4747]">
                   {title || "Chưa có tiêu đề"}

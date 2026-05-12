@@ -4,6 +4,8 @@ import {
 } from "@/constants/categories";
 import { createClient } from "@/lib/supabase/server";
 
+type PostStatus = "draft" | "scheduled" | "published";
+
 export type PostCategory = "Yoga" | "Tài chính" | "Parenting" | "Cuộc sống";
 
 export type BlogPostSummary = {
@@ -15,9 +17,11 @@ export type BlogPostSummary = {
   categoryLabel: string;
   categorySlug: string;
   date: string;
+  publishTime: string;
+  tags: string[];
   readTime: string;
   commentCount: number;
-  status?: string;
+  status?: PostStatus;
 };
 
 export type BlogPostDetail = BlogPostSummary & {
@@ -42,6 +46,7 @@ type PostRow = {
   content: string | null;
   published_at: string | null;
   created_at: string | null;
+  tags?: string[] | null;
   status?: string | null;
   categories: CategoryRow | CategoryRow[] | null;
 };
@@ -53,7 +58,7 @@ export async function getPublishedPosts(options?: {
 }) {
   const supabase = createClient();
   const selectClause =
-    "id,title,slug,summary,content,published_at,created_at,categories!inner(name,slug)";
+    "id,title,slug,summary,content,published_at,created_at,tags,categories!inner(name,slug)";
 
   let query = supabase
     .from("posts")
@@ -95,7 +100,7 @@ export async function getPostBySlug(slug: string) {
   const { data, error } = await supabase
     .from("posts")
     .select(
-      "id,title,slug,summary,content,published_at,created_at,categories(name,slug)",
+      "id,title,slug,summary,content,published_at,created_at,tags,categories(name,slug)",
     )
     .eq("slug", slug)
     .in("status", ["published", "scheduled"])
@@ -133,9 +138,11 @@ export async function getCategoryOptions() {
 
 export async function getAdminPosts(options?: { limit?: number }) {
   const supabase = createClient();
+  await publishDueScheduledPosts(supabase);
+
   let query = supabase
     .from("posts")
-    .select("id,title,slug,summary,content,published_at,created_at,status,categories(name,slug)")
+    .select("id,title,slug,summary,content,published_at,created_at,status,tags,categories(name,slug)")
     .order("created_at", { ascending: false });
 
   if (options?.limit) {
@@ -150,6 +157,18 @@ export async function getAdminPosts(options?: { limit?: number }) {
   }
 
   return attachCommentCounts((data ?? []) as PostRow[]);
+}
+
+async function publishDueScheduledPosts(supabase: ReturnType<typeof createClient>) {
+  const { error } = await supabase
+    .from("posts")
+    .update({ status: "published" })
+    .eq("status", "scheduled")
+    .lte("published_at", new Date().toISOString());
+
+  if (error) {
+    console.error("[posts.publishDueScheduled]", error);
+  }
 }
 
 async function attachCommentCounts(rows: PostRow[]) {
@@ -181,6 +200,7 @@ function toPostSummary(post: PostRow, commentCount: number): BlogPostSummary {
   const category = getSingleCategory(post.categories);
   const categorySlug = category?.slug ?? "life";
   const content = post.content ?? "";
+  const effectiveStatus = getEffectiveStatus(post.status, post.published_at);
 
   return {
     id: post.id,
@@ -191,9 +211,11 @@ function toPostSummary(post: PostRow, commentCount: number): BlogPostSummary {
     categoryLabel: getCategoryLabel(categorySlug, category?.name),
     categorySlug,
     date: formatDate(post.published_at ?? post.created_at),
+    publishTime: formatDateTime(post.published_at),
+    tags: post.tags ?? [],
     readTime: getReadTime(content),
     commentCount,
-    status: post.status ?? "draft",
+    status: effectiveStatus,
   };
 }
 
@@ -232,6 +254,30 @@ function formatDate(value: string | null) {
     month: "long",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function formatDateTime(value: string | null) {
+  if (!value) return "";
+
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function getEffectiveStatus(
+  status: string | null | undefined,
+  publishedAt: string | null,
+): PostStatus {
+  if (status === "scheduled" && publishedAt && new Date(publishedAt).getTime() <= Date.now()) {
+    return "published";
+  }
+  if (status === "scheduled") return "scheduled";
+  if (status === "published") return "published";
+  return "draft";
 }
 
 function getReadTime(content: string) {
