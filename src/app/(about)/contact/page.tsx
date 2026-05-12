@@ -171,6 +171,12 @@ export default function ContactPage() {
                     <Link
                       key={label}
                       href={href}
+                      target={href.startsWith("http") ? "_blank" : undefined}
+                      rel={
+                        href.startsWith("http")
+                          ? "noopener noreferrer"
+                          : undefined
+                      }
                       className="block rounded-[28px] focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
                     >
                       {content}
@@ -190,6 +196,8 @@ export default function ContactPage() {
                     <Link
                       key={item.label}
                       href={item.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-5 py-3 text-[13px] font-semibold text-[#6c5151] shadow-[0_10px_24px_rgba(214,156,161,0.12)] transition-all duration-300 hover:-translate-y-0.5 hover:border-rose-300 hover:text-rose-400"
                     >
                       {/* {index === 0 && <Instagram className="h-4 w-4" />} */}

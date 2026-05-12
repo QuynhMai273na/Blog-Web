@@ -98,7 +98,9 @@ export function CommentSection({
       return;
     }
 
-    setComments((current) => current.filter((comment) => comment.id !== commentId));
+    setComments((current) =>
+      current.filter((comment) => comment.id !== commentId),
+    );
   }
 
   const count = isLoading ? initialCount : comments.length;
@@ -106,7 +108,7 @@ export function CommentSection({
   return (
     <section className="mt-8 rounded-[32px] border border-rose-100/80 bg-white/90 p-6 shadow-[0_14px_40px_rgba(214,156,161,0.08)] md:p-8">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="font-serif text-[1.9rem] font-normal  text-[#4a3737]">
+        <h2 className="font-serif text-2xl font-normal leading-[1.4] tracking-normal text-text_primary">
           Bình luận ({count})
         </h2>
       </div>
@@ -220,6 +222,8 @@ type CommentRow = Omit<Comment, "profiles"> & {
 function toComment(row: CommentRow): Comment {
   return {
     ...row,
-    profiles: Array.isArray(row.profiles) ? row.profiles[0] ?? null : row.profiles,
+    profiles: Array.isArray(row.profiles)
+      ? (row.profiles[0] ?? null)
+      : row.profiles,
   };
 }
