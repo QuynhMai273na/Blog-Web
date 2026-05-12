@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
 import { Playfair_Display, Montserrat } from "next/font/google";
+import { Suspense } from "react";
 import "@/app/globals.css";
 import DynamicNavbar from "@/components/common/navbars/DynamicNavbar";
 import FooterGuard from "@/components/common/footer/FooterGuard";
@@ -34,7 +35,9 @@ export default function RootLayout({
     <html lang="vi" className={`${playfair.variable} ${montserrat.variable}`}>
       <body>
         <div className="web-container">
-          <DynamicNavbar />
+          <Suspense fallback={null}>
+            <DynamicNavbar />
+          </Suspense>
           <main className="flex min-h-0 flex-1 flex-col overflow-y-auto animate-bloom">
             {children}
           </main>

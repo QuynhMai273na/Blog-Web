@@ -11,7 +11,7 @@ export default function CommentForm() {
         value={comment}
         onChange={(e) => setComment(e.target.value)}
         placeholder="Chia sẻ cảm nghĩ của bạn..."
-        className="input-field min-h-36 rounded-[24px] border-rose-200 bg-[#2f2d2b] px-5 py-4 font-serif text-[15px] italic text-white shadow-[0_8px_24px_rgba(45,62,47,0.16)] placeholder:text-[#9f9592] focus:border-rose-300 focus:ring-rose-200"
+        className="input-field min-h-36 rounded-[24px] border-rose-200 bg-[#2f2d2b] px-5 py-4 font-serif text-[15px]  text-white shadow-[0_8px_24px_rgba(45,62,47,0.16)] placeholder:text-[#9f9592] focus:border-rose-300 focus:ring-rose-200"
       />
       <button
         type="button"
