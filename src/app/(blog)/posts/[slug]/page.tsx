@@ -131,6 +131,16 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                 ))}
               </div>
 
+              <div className="mt-4 border-t border-rose-100/80 pt-6 text-[15px] leading-7 text-[#8a7a7a] md:text-base">
+                <span>Filed Under: </span>
+                <Link
+                  href={`/category/${post.categorySlug}`}
+                  className="font-medium transition-colors duration-300 hover:text-rose-400"
+                >
+                  {post.categoryLabel}
+                </Link>
+              </div>
+
               <CommentSection
                 postId={post.id}
                 initialCount={post.commentCount}
@@ -205,7 +215,17 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                 </Link>
               </div>
             </div>
-
+            <div className="rounded-[30px] border border-white/90 bg-[#fffefd]/95 p-6 shadow-[0_24px_70px_rgba(45,62,47,0.1)] ring-1 ring-rose-100/70 backdrop-blur-md">
+              <h3 className="border-b border-rose-100 pb-3 font-serif text-2xl font-normal leading-[1.4] tracking-normal text-text_primary">
+                Buy me a coffee
+              </h3>
+              {/* <p className="mt-4 text-sm  leading-7 text-[#8a7474]">
+                Nếu bạn tìm thấy cảm hứng hay giá trị tích cực từ bài viết này,
+                hãy ủng hộ để Becoming Blooming có thêm nguồn lực duy trì và
+                phát triển bền vững. Một 'tách cà phê' nhỏ từ bạn sẽ là nguồn
+                tiếp sức ý nghĩa cho mình trên hành trình viết lách này.
+              </p> */}
+            </div>
             <Link
               href="/posts"
               className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white/90 px-4 py-2 text-[13px] font-medium text-[#6f5a5a] shadow-[0_10px_26px_rgba(214,156,161,0.1)] transition-all duration-300 hover:-translate-y-0.5 hover:border-rose-300 hover:text-rose-400"
