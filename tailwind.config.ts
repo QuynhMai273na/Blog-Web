@@ -8,8 +8,8 @@ const config: Config = {
     extend: {
       colors: {
         // Tông Xanh Pastel (Sage) cho sự chuyên nghiệp, nhẹ nhàng
-        text_primary: "#3a2520", // Màu chữ chính đậm
-        text_secondary: "#7a5a55", // Màu chữ chính nâu nhạt
+        text_primary: "#402f2f", // Màu chữ chính đậm
+        text_secondary: "#6a5555", // Màu chữ chính nâu nhạt
         sage: {
           50: "#F1F8F5",
           100: "#D1E7DD", // Nền cho Tag "Yoga"
