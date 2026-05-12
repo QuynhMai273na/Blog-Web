@@ -37,13 +37,13 @@ export default function AboutPage() {
                 Parenting
               </span>
               <span className="rounded-full border border-[#d1e7dd] bg-[#f1f8f5] px-4 py-1.5 text-xs font-medium text-[#6b9b84]">
-                Yoga
+                Yoga & Sức khỏe
               </span>
               <span className="rounded-full border border-[#f1ddd8] bg-[#fdf6f0] px-4 py-1.5 text-xs font-medium text-[#c98e55]">
-                Tài chính
+                Tài chính cá nhân
               </span>
               <span className="rounded-full border border-[#d1e7dd] bg-[#f1f8f5] px-4 py-1.5 text-xs font-medium text-[#6b9b84]">
-                Bài học cuộc sống
+                Cuộc sống
               </span>
             </div>
           </div>
