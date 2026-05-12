@@ -161,7 +161,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
         })}
       </section>
 
-      {allPosts.length > POSTS_PER_PAGE && (
+      {allPosts.length > 0 && (
         <section className="w-full bg-[#fdfcf8] py-6">
           <div className="flex flex-wrap items-center justify-center gap-3 px-4">
             {currentPage > 1 ? (

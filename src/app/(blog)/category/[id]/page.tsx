@@ -4,15 +4,32 @@ import { getBlogCategoryLabel } from "@/constants/categories";
 import { getPublishedPosts } from "@/services/post.service";
 
 export const dynamic = "force-dynamic";
+const POSTS_PER_PAGE = 4;
 
 export default async function CategoryPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams?: Promise<{ page?: string }>;
 }) {
   const { id } = await params;
-  const posts = await getPublishedPosts({ categorySlug: id, limit: 4 });
-  const categoryName = posts[0]?.categoryLabel ?? getFallbackCategoryName(id);
+  const query = await searchParams;
+  const requestedPage = Number(query?.page ?? "1");
+  const allPosts = await getPublishedPosts({
+    categorySlug: id,
+    orderBy: "created_at",
+  });
+  const totalPages = Math.max(1, Math.ceil(allPosts.length / POSTS_PER_PAGE));
+  const currentPage = Math.min(
+    Math.max(Number.isFinite(requestedPage) ? requestedPage : 1, 1),
+    totalPages,
+  );
+  const posts = allPosts.slice(
+    (currentPage - 1) * POSTS_PER_PAGE,
+    currentPage * POSTS_PER_PAGE,
+  );
+  const categoryName = allPosts[0]?.categoryLabel ?? getFallbackCategoryName(id);
 
   return (
     <div className="flex min-h-full w-full flex-col bg-white pb-4">
@@ -31,7 +48,8 @@ export default async function CategoryPage({
       </section>
 
       {posts.length > 0 ? (
-        <section className="flex w-full flex-1 flex-col">
+        <>
+          <section className="flex w-full flex-1 flex-col">
           {posts.map((post) => (
             <Link
               key={post.id}
@@ -64,7 +82,60 @@ export default async function CategoryPage({
               </article>
             </Link>
           ))}
-        </section>
+          </section>
+
+          {allPosts.length > 0 && (
+            <section className="w-full bg-[#fdfcf8] py-6">
+              <div className="flex flex-wrap items-center justify-center gap-3 px-4">
+                {currentPage > 1 ? (
+                  <Link
+                    href={getPaginationHref({ categorySlug: id, page: currentPage - 1 })}
+                    className="rounded-full border border-[#f1ddd8] bg-white px-5 py-2.5 text-sm font-medium text-sage-800 shadow-sm transition-colors hover:bg-[#fff5f6] hover:text-[#d96e83]"
+                  >
+                    ← Trước
+                  </Link>
+                ) : (
+                  <span className="rounded-full border border-[#f1ddd8] bg-white px-5 py-2.5 text-sm font-medium text-sage-800/35 shadow-sm">
+                    ← Trước
+                  </span>
+                )}
+
+                {Array.from({ length: totalPages }, (_, index) => {
+                  const page = index + 1;
+                  const isActive = page === currentPage;
+
+                  return (
+                    <Link
+                      key={page}
+                      href={getPaginationHref({ categorySlug: id, page })}
+                      aria-current={isActive ? "page" : undefined}
+                      className={
+                        isActive
+                          ? "flex h-10 w-10 items-center justify-center rounded-full bg-[#d96e83] text-sm font-bold text-white shadow-md transition-colors hover:bg-[#c85f70]"
+                          : "flex h-10 w-10 items-center justify-center rounded-full border border-[#f1ddd8] bg-white text-sm font-medium text-sage-800 shadow-sm transition-colors hover:bg-[#fff5f6] hover:text-[#d96e83]"
+                      }
+                    >
+                      {page}
+                    </Link>
+                  );
+                })}
+
+                {currentPage < totalPages ? (
+                  <Link
+                    href={getPaginationHref({ categorySlug: id, page: currentPage + 1 })}
+                    className="rounded-full border border-[#f1ddd8] bg-white px-5 py-2.5 text-sm font-medium text-sage-800 shadow-sm transition-colors hover:bg-[#fff5f6] hover:text-[#d96e83]"
+                  >
+                    Sau →
+                  </Link>
+                ) : (
+                  <span className="rounded-full border border-[#f1ddd8] bg-white px-5 py-2.5 text-sm font-medium text-sage-800/35 shadow-sm">
+                    Sau →
+                  </span>
+                )}
+              </div>
+            </section>
+          )}
+        </>
       ) : (
         <section className="flex w-full flex-1 items-center justify-center px-6 py-10">
           <div className="w-full max-w-2xl rounded-3xl border border-rose-100 bg-[#fdfcf8] p-10 text-center shadow-sm">
@@ -93,6 +164,16 @@ export default async function CategoryPage({
 
 function getFallbackCategoryName(slug: string) {
   return getBlogCategoryLabel(slug);
+}
+
+function getPaginationHref({
+  categorySlug,
+  page,
+}: {
+  categorySlug: string;
+  page: number;
+}) {
+  return page > 1 ? `/category/${categorySlug}?page=${page}` : `/category/${categorySlug}`;
 }
 
 function getCategoryIcon(slug: string) {
