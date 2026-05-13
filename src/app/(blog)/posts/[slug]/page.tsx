@@ -119,10 +119,11 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                 />
               )}
 
+              <PostExcerpt excerpt={post.excerpt} />
+
               <RichPostContent
                 contentJson={post.contentJson}
                 fallbackContent={post.content}
-                excerpt={post.excerpt}
               />
 
               <div className="mt-4 border-t border-rose-100/80 pt-6 text-[15px] leading-7 text-[#8a7a7a] md:text-base">
@@ -248,6 +249,14 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
         </div>
       </section>
     </div>
+  );
+}
+
+function PostExcerpt({ excerpt }: { excerpt: string }) {
+  return (
+    <blockquote className="mb-8 rounded-[24px] border-l-4 border-rose-300 bg-gradient-to-r from-rose-50 to-rose-50/35 px-6 py-5 font-serif text-lg italic tracking-normal text-[#9a6570]">
+      {excerpt}
+    </blockquote>
   );
 }
 
