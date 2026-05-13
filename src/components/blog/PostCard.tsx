@@ -47,7 +47,7 @@ const styleMap: Record<
   },
   "Cuộc sống": {
     bg: "bg-[#fcf5ea]",
-    tag: "bg-[#fcf5ea] text-[#b78a54] border-[#f1ddd8]",
+    tag: "bg-[#f1f8f5] text-[#6b9b84] border-[#d1e7dd]",
     emoji: "🌻",
     decor: "🌿",
     decorColor: "text-[#b78a54]",
