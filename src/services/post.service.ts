@@ -21,11 +21,13 @@ export type BlogPostSummary = {
   tags: string[];
   readTime: string;
   commentCount: number;
+  thumbnailUrl: string | null;
   status?: PostStatus;
 };
 
 export type BlogPostDetail = BlogPostSummary & {
   content: string;
+  contentJson: unknown;
   paragraphs: string[];
   sections: Array<{
     heading: string;
@@ -44,6 +46,8 @@ type PostRow = {
   slug: string;
   summary: string | null;
   content: string | null;
+  content_json?: unknown;
+  thumbnail_url?: string | null;
   published_at: string | null;
   created_at: string | null;
   tags?: string[] | null;
@@ -59,7 +63,7 @@ export async function getPublishedPosts(options?: {
 }) {
   const supabase = createClient();
   const selectClause =
-    "id,title,slug,summary,content,published_at,created_at,tags,categories!inner(name,slug)";
+    "id,title,slug,summary,content,thumbnail_url,published_at,created_at,tags,categories!inner(name,slug)";
   const normalizedQuery = normalizeSearchQuery(options?.query);
 
   let query = supabase
@@ -107,7 +111,7 @@ export async function getPostBySlug(slug: string) {
   const { data, error } = await supabase
     .from("posts")
     .select(
-      "id,title,slug,summary,content,published_at,created_at,tags,categories(name,slug)",
+      "id,title,slug,summary,content,content_json,thumbnail_url,published_at,created_at,tags,categories(name,slug)",
     )
     .eq("slug", slug)
     .in("status", ["published", "scheduled"])
@@ -149,7 +153,7 @@ export async function getAdminPosts(options?: { limit?: number; offset?: number 
 
   let query = supabase
     .from("posts")
-    .select("id,title,slug,summary,content,published_at,created_at,status,tags,categories(name,slug)")
+    .select("id,title,slug,summary,content,thumbnail_url,published_at,created_at,status,tags,categories(name,slug)")
     .order("created_at", { ascending: false });
 
   if (options?.limit && typeof options.offset === "number") {
@@ -224,6 +228,7 @@ function toPostSummary(post: PostRow, commentCount: number): BlogPostSummary {
     tags: post.tags ?? [],
     readTime: getReadTime(content),
     commentCount,
+    thumbnailUrl: post.thumbnail_url ?? null,
     status: effectiveStatus,
   };
 }
@@ -235,6 +240,7 @@ function toPostDetail(post: PostRow, commentCount: number): BlogPostDetail {
   return {
     ...summary,
     content,
+    contentJson: post.content_json ?? null,
     paragraphs: getIntroParagraphs(content),
     sections: getSections(content),
   };

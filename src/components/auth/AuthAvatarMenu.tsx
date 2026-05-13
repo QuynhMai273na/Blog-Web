@@ -23,6 +23,7 @@ export default function AuthAvatarMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
 
   async function loadProfile(userId: string) {
     const supabase = createClient();
@@ -76,6 +77,9 @@ export default function AuthAvatarMenu() {
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, []);
 
+  const avatarUrl = profile?.avatar_url ?? user?.user_metadata.avatar_url;
+  const canShowAvatar = Boolean(avatarUrl && failedAvatarUrl !== avatarUrl);
+
   const handleSignOut = async () => {
     setIsSigningOut(true);
     const { error } = await signOut();
@@ -115,7 +119,6 @@ export default function AuthAvatarMenu() {
     user.email ??
     "User";
   const email = profile?.email ?? user.email;
-  const avatarUrl = profile?.avatar_url ?? user.user_metadata.avatar_url;
   const isAdmin = profile?.app_role === "admin";
 
   return (
@@ -128,11 +131,13 @@ export default function AuthAvatarMenu() {
         aria-expanded={isOpen}
         aria-label="Mở menu tài khoản"
       >
-        {avatarUrl ? (
+        {canShowAvatar ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={avatarUrl}
             alt={displayName}
+            referrerPolicy="no-referrer"
+            onError={() => setFailedAvatarUrl(avatarUrl ?? null)}
             className="h-full w-full object-cover"
           />
         ) : (
