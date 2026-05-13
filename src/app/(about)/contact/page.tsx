@@ -105,13 +105,13 @@ export default function ContactPage() {
           <p className="mb-3 font-serif text-[13px]  tracking-[0.2em] text-sage-800/55">
             — contact & kind conversations —
           </p>
-          <h1 className="mx-auto max-w-3xl font-serif text-3xl leading-[1.35] tracking-normal text-[#3d2f2f] md:text-[40px]">
+          <h1 className="mx-auto max-w-3xl font-serif text-3xl font-normal leading-[1.4] tracking-normal text-text_black md:text-[40px]">
             Nếu bạn muốn trò chuyện,
-            <span className="block font-medium  text-rose-300">
+            <span className="block text-rose-300">
               mình luôn ở đây lắng nghe
             </span>
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-[14px] leading-7 text-[#7f6e6e] md:text-[15px]">
+          <p className="mx-auto mt-4 max-w-2xl text-[14px] leading-7 text-text_secondary md:text-[15px]">
             Dù là một lời chào, một câu chuyện riêng, góp ý cho bài viết hay lời
             mời hợp tác, mình muốn phần liên hệ này vẫn giữ cảm giác dịu dàng,
             gần gũi và thật như chính blog này.
@@ -135,7 +135,7 @@ export default function ContactPage() {
                 Một góc nhỏ để kết nối
               </div>
 
-              <h2 className="mt-6 font-serif text-base font-normal  text-[#4a3737] md:text-[36px]">
+              <h2 className="mt-6 font-serif text-3xl tracking-[1px] font-normal text-text_primary sm:text-2xl">
                 Nói chuyện với mình nhé
               </h2>
               <p className="mt-5 max-w-xl text-[15px] leading-8 text-[#6d5a5a]">
@@ -221,7 +221,7 @@ export default function ContactPage() {
             />
 
             <div className="relative">
-              <h2 className="font-serif text-base font-normal  text-[#3d2f2f] md:text-[36px]">
+              <h2 className="font-serif text-3xl font-normal tracking-[1px] text-text_primary sm:text-2xl">
                 Gửi tin nhắn
               </h2>
               <p className="mt-3 max-w-lg text-[14px] leading-7 text-[#7a6f6f]">

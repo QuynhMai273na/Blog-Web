@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Search } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { getPostBySlug, getRelatedPosts } from "@/services/post.service";
 import { BuyMeCoffeeCard } from "@/components/blog/BuyMeCoffeeCard";
 import { CommentSection } from "@/components/blog/CommentSection";
 import { PostActions } from "@/components/dashboard/PostActions";
+import { SubscribeForm } from "@/components/forms/SubscribeForm";
 import { createClient } from "@/lib/supabase/server";
 
 type PostDetailPageProps = {
@@ -93,7 +94,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                 slug={post.slug}
                 canView={false}
                 redirectAfterDelete="/posts"
-                className="mt-6 justify-center"
+                className="mt-6 items-center"
               />
             )}
           </header>
@@ -166,22 +167,36 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                   Hãy đăng ký email của bạn để nhận thông báo về bài viết mới
                   nhất.
                 </p>
-                {/* Thêm input email */}
-                <div className="mt-6">
-                  <input
-                    type="email"
-                    placeholder="Nhập email của bạn"
-                    required
-                    className="w-full rounded-[18px] border border-rose-100 bg-white px-4 py-3 text-[13px] font-medium text-[#9a6570] shadow-sm placeholder:text-[#9a6570] transition focus:border-rose-300 focus:outline-none focus:ring-2 focus:ring-rose-100"
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="mt-6 rounded-[18px] border border-rose-100 bg-rose-200 px-4 py-2 text-[13px] font-medium text-white shadow-sm transition hover:bg-rose-300 hover:border-rose-300 hover:text-text_secondary"
-                >
-                  Đăng ký
-                </button>
+                <SubscribeForm
+                  variant="sidebar"
+                  placeholder="Nhập email của bạn"
+                />
               </div>
+            </div>
+
+            <div className="rounded-[30px] border border-white/90 bg-[#fffefd]/95 p-6 shadow-[0_24px_70px_rgba(45,62,47,0.1)] ring-1 ring-rose-100/70 backdrop-blur-md">
+              <form action="/posts" className="space-y-3">
+                <label className="relative block">
+                  <span className="sr-only">Tìm bài viết</span>
+                  <Search
+                    className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#b09090]"
+                    aria-hidden="true"
+                  />
+                  <input
+                    type="text"
+                    inputMode="search"
+                    name="q"
+                    placeholder="Tìm bài viết..."
+                    className="w-full rounded-full border border-rose-100 bg-white px-4 py-3 pl-11 text-[13px] font-medium text-[#6f5a5a] shadow-sm outline-none transition placeholder:text-[#b09090] focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
+                  />
+                </label>
+                <button
+                  type="submit"
+                  className="inline-flex w-full items-center justify-center rounded-full bg-[#d96e83] px-4 py-2.5 text-[13px] font-semibold text-white shadow-sm transition-colors hover:bg-[#c85f70]"
+                >
+                  Tìm kiếm
+                </button>
+              </form>
             </div>
 
             <div className="rounded-[30px] border border-white/90 bg-[#fffefd]/95 p-6 shadow-[0_24px_70px_rgba(45,62,47,0.1)] ring-1 ring-rose-100/70 backdrop-blur-md">
