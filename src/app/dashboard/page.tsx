@@ -69,25 +69,25 @@ export default async function DashboardPage({
     {
       label: "Tổng bài viết",
       value: String(totalPosts),
-      sub: "Đọc từ bảng posts",
+      sub: "Tổng số bài viết trong hệ thống",
       type: "success",
     },
     {
       label: "Bài đã đăng",
       value: String(publishedPostsCount.count ?? 0),
-      sub: "Tổng số bài đã publish",
+      sub: "Tổng số bài viết đã được publish",
       type: "success",
     },
     {
       label: "Bình luận chờ duyệt",
       value: String(pendingCommentsCount.count ?? 0),
-      sub: "Cần xem xét",
+      sub: "Số bình luận chưa được duyệt",
       type: "warning",
     },
     {
       label: "Subscribers",
       value: String(subscribersCount.count ?? 0),
-      sub: "Từ bảng subscribers",
+      sub: "Số người đăng ký nhận email thông báo",
       type: "success",
     },
   ];
@@ -97,7 +97,9 @@ export default async function DashboardPage({
       <aside className="flex h-full w-[240px] shrink-0 flex-col overflow-hidden bg-[#3e2829] pt-10 text-[#b09090]">
         <div className="mb-10 px-8">
           <h1 className="font-serif text-[22px] leading-tight">
-            <span className="text-[#d96e83] ">Admin</span>
+            <span className="text-[#d96e83] ">
+              {user.user_metadata.full_name}
+            </span>
           </h1>
         </div>
 
@@ -142,14 +144,14 @@ export default async function DashboardPage({
               key={stat.label}
               className="rounded-2xl border border-[#f0e6e0] bg-white p-6 shadow-sm transition-transform hover:-translate-y-1"
             >
-              <p className="mb-2 text-xs font-medium text-[#7a5a55]">
+              <p className="mb-2 text-sm font-medium text-[#7a5a55]">
                 {stat.label}
               </p>
               <div className="mb-2 font-serif text-4xl text-[#3a2520]">
                 {stat.value}
               </div>
               <p
-                className={`text-[11px]  ${
+                className={`text-xs  ${
                   stat.type === "success" ? "text-[#6b9b84]" : "text-[#d96e83]"
                 }`}
               >
@@ -161,12 +163,14 @@ export default async function DashboardPage({
 
         <div className="overflow-hidden rounded-[24px] border border-[#f0e6e0] bg-white shadow-sm">
           <div className="grid grid-cols-[4fr_2fr_2fr_2fr] bg-[#fff5f6] px-6 py-4">
-            <div className="text-sm font-medium text-[#d96e83]">
+            <div className="text-base font-medium text-[#d96e83]">
               Tiêu đề bài viết
             </div>
-            <div className="text-sm font-medium text-[#d96e83]">Danh mục</div>
-            <div className="text-sm font-medium text-[#d96e83]">Trạng thái</div>
-            <div className="pr-4 text-right text-sm font-medium text-[#d96e83]">
+            <div className="text-base font-medium text-[#d96e83]">Danh mục</div>
+            <div className="text-base font-medium text-[#d96e83]">
+              Trạng thái
+            </div>
+            <div className="pr-4 text-right text-base font-medium text-[#d96e83]">
               Hành động
             </div>
           </div>
@@ -178,10 +182,10 @@ export default async function DashboardPage({
                   key={post.id}
                   className="grid grid-cols-[4fr_2fr_2fr_2fr] items-center border-t border-[#f0e6e0] px-6 py-5 transition-colors hover:bg-[#fafafa]"
                 >
-                  <div className="pr-4 font-serif text-[15px] text-[#3a2520]">
+                  <div className="pr-4 text-sm text-text_primary overflow-hidden text-ellipsis whitespace-nowrap">
                     {post.title}
                   </div>
-                  <div className="text-sm text-[#7a5a55]">
+                  <div className="text-sm text-text_primary">
                     {post.categoryLabel}
                   </div>
                   <div>

@@ -141,9 +141,7 @@ const EditorImage = TiptapImage.extend({
         default: null,
         parseHTML: (element) => element.getAttribute("data-upload-temp-id"),
         renderHTML: (attributes) =>
-          attributes.tempId
-            ? { "data-upload-temp-id": attributes.tempId }
-            : {},
+          attributes.tempId ? { "data-upload-temp-id": attributes.tempId } : {},
       },
     };
   },
@@ -465,8 +463,7 @@ function WritePageContent() {
         setCoverPublicUrl(post.thumbnail_url ?? null);
         const coverAsset = (post.assets ?? []).find(
           (asset) =>
-            asset.kind === "cover" &&
-            asset.public_url === post.thumbnail_url,
+            asset.kind === "cover" && asset.public_url === post.thumbnail_url,
         );
         setCoverAssetId(coverAsset?.id ?? null);
         setCoverAssetStatus(coverAsset ? "attached" : null);
@@ -537,9 +534,9 @@ function WritePageContent() {
       body: formData,
     });
 
-    const result = (await response.json().catch(() => null)) as
-      | UploadResponse
-      | null;
+    const result = (await response
+      .json()
+      .catch(() => null)) as UploadResponse | null;
 
     if (!response.ok || !result?.assetId || !result.url) {
       throw new Error(result?.error ?? "Khong the tai anh.");
@@ -699,8 +696,7 @@ function WritePageContent() {
       removeEditorImage(tempId);
       setNotice({
         tone: "error",
-        message:
-          error instanceof Error ? error.message : "Khong the tai anh.",
+        message: error instanceof Error ? error.message : "Khong the tai anh.",
       });
     } finally {
       URL.revokeObjectURL(previewUrl);
@@ -1335,7 +1331,7 @@ function WritePageContent() {
                     disabled={isCoverUploading}
                     className="flex-1 rounded-[14px] border border-sage-100 bg-sage-50 px-3 py-2 text-xs font-medium text-[#64806f] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Doi anh
+                    Đổi
                   </button>
                   <button
                     type="button"
@@ -1343,7 +1339,7 @@ function WritePageContent() {
                     disabled={isCoverUploading}
                     className="flex-1 rounded-[14px] border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-medium text-[#be123c] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Xoa anh
+                    Xóa
                   </button>
                 </div>
               )}
@@ -1497,9 +1493,7 @@ function WritePageContent() {
                     className="mb-8 aspect-video w-full rounded-[28px] object-cover shadow-[0_20px_60px_rgba(45,62,47,0.14)]"
                   />
                 )}
-                <article
-                  className="max-w-none overflow-hidden rounded-[28px] border border-white/90 bg-[#fffefd]/95 p-7 text-[#3a312f] shadow-[0_24px_70px_rgba(45,62,47,0.1)] md:p-10"
-                >
+                <article className="max-w-none overflow-hidden rounded-[28px] border border-white/90 bg-[#fffefd]/95 p-7 text-[#3a312f] shadow-[0_24px_70px_rgba(45,62,47,0.1)] md:p-10">
                   <RichPostContent
                     contentJson={editor?.getJSON() ?? null}
                     fallbackContent={toPlainPostContent(editor?.getJSON())}
@@ -1534,8 +1528,8 @@ function getFirstImageFile(files: FileList | null | undefined) {
 function isTiptapDocument(value: unknown) {
   return Boolean(
     value &&
-      typeof value === "object" &&
-      (value as { type?: unknown }).type === "doc",
+    typeof value === "object" &&
+    (value as { type?: unknown }).type === "doc",
   );
 }
 
