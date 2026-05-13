@@ -22,7 +22,6 @@ import {
   MessageCircle,
   Pin,
   Quote,
-  Sparkles,
   Type,
   Underline as UnderlineIcon,
 } from "lucide-react";
@@ -95,7 +94,6 @@ const toggleMeta: Array<{
   { key: "comments", label: "Cho phép bình luận", icon: MessageCircle },
   { key: "featured", label: "Ghim lên đầu", icon: Pin },
   { key: "emailSubscribers", label: "Gửi email subscribers", icon: Mail },
-  { key: "showHomepage", label: "Hiển thị trang chủ", icon: Sparkles },
 ];
 
 const averageWordsPerMinute = 220;
@@ -1135,6 +1133,18 @@ function WritePageContent() {
                         [&_.ProseMirror_blockquote]:italic
                         [&_.ProseMirror_blockquote]:text-[#7a6666]
                         [&_.ProseMirror_blockquote]:my-5
+                        [&_.ProseMirror_ul]:my-5
+                        [&_.ProseMirror_ul]:list-disc
+                        [&_.ProseMirror_ul]:pl-7
+                        [&_.ProseMirror_ol]:my-5
+                        [&_.ProseMirror_ol]:list-decimal
+                        [&_.ProseMirror_ol]:pl-7
+                        [&_.ProseMirror_li]:my-1
+                        [&_.ProseMirror_li]:pl-1
+                        [&_.ProseMirror_li]:text-[1.05rem]
+                        [&_.ProseMirror_li]:leading-8
+                        [&_.ProseMirror_li_p]:mb-0
+                        [&_.ProseMirror_li_p]:text-inherit
                         [&_.ProseMirror_a]:text-rose-400
                         [&_.ProseMirror_a]:underline
                         [&_.ProseMirror_img]:my-6
@@ -1497,7 +1507,6 @@ function WritePageContent() {
                   <RichPostContent
                     contentJson={editor?.getJSON() ?? null}
                     fallbackContent={toPlainPostContent(editor?.getJSON())}
-                    excerpt={excerpt || undefined}
                   />
                 </article>
               </main>
