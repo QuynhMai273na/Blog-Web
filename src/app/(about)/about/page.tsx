@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { BLOG_CATEGORIES } from "@/constants/categories";
 
 export default function AboutPage() {
   const router = useRouter();
@@ -33,18 +34,14 @@ export default function AboutPage() {
 
             {/* Các thẻ Tags */}
             <div className="flex flex-wrap justify-center md:justify-start gap-3">
-              <span className="rounded-full border border-[#f2a7b0] bg-[#fce8eb] px-4 py-1.5 text-xs font-medium text-[#d96e83]">
-                Parenting
-              </span>
-              <span className="rounded-full border border-[#d1e7dd] bg-[#f1f8f5] px-4 py-1.5 text-xs font-medium text-[#6b9b84]">
-                Yoga & Sức khỏe
-              </span>
-              <span className="rounded-full border border-[#f1ddd8] bg-[#fdf6f0] px-4 py-1.5 text-xs font-medium text-[#c98e55]">
-                Tài chính cá nhân
-              </span>
-              <span className="rounded-full border border-[#d1e7dd] bg-[#f1f8f5] px-4 py-1.5 text-xs font-medium text-[#6b9b84]">
-                Cuộc sống
-              </span>
+              {BLOG_CATEGORIES.map((category) => (
+                <span
+                  key={category.slug}
+                  className={`rounded-full border px-4 py-1.5 text-xs font-medium ${category.tagClass}`}
+                >
+                  {category.label}
+                </span>
+              ))}
             </div>
           </div>
         </div>
@@ -61,7 +58,7 @@ export default function AboutPage() {
             </h3>
             <p className="text-base font-light leading-relaxed text-[#7a5a55]">
               Mình bắt đầu viết blog này vào năm 2024, khi cảm thấy mình đang
-              "lạc" trong cuộc sống của chính mình. Vừa làm mẹ, vừa cố gắng giữ
+              &quot;lạc&quot; trong cuộc sống của chính mình. Vừa làm mẹ, vừa cố gắng giữ
               sức khỏe, vừa lo chuyện tiền bạc — mọi thứ cứ hỗn độn. Blog này là
               nơi mình tìm lại sự cân bằng, và hy vọng những chia sẻ của mình có
               thể đồng hành cùng bạn.
@@ -102,7 +99,7 @@ export default function AboutPage() {
               Kết nối với mình
             </h3>
             <p className="mb-8 text-sm text-[#7a5a55] font-light">
-              Nếu bạn muốn trò chuyện, hợp tác hoặc chỉ đơn giản là nói "hi" —
+              Nếu bạn muốn trò chuyện, hợp tác hoặc chỉ đơn giản là nói &quot;hi&quot; —
               mình luôn ở đây!
             </p>
             <button

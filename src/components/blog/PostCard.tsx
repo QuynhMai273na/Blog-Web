@@ -1,6 +1,7 @@
 import Link from "next/link";
 import React from "react";
 
+import { getBlogCategoryStyle } from "@/constants/categories";
 import type { PostCategory } from "@/services/post.service";
 
 interface PostCardProps {
@@ -15,46 +16,6 @@ interface PostCardProps {
   horizontal?: boolean;
 }
 
-const styleMap: Record<
-  PostCategory,
-  {
-    bg: string;
-    tag: string;
-    emoji: string;
-    decor: string;
-    decorColor: string;
-  }
-> = {
-  Yoga: {
-    bg: "bg-[#fce8eb]",
-    tag: "bg-[#f1f8f5] text-[#6b9b84] border-[#d1e7dd]",
-    emoji: "🧘",
-    decor: "🌸",
-    decorColor: "text-[#f2a7b0]",
-  },
-  "Tài chính": {
-    bg: "bg-[#dcefd8]",
-    tag: "bg-[#fdf6f0] text-[#c98e55] border-[#f1ddd8]",
-    emoji: "💰",
-    decor: "🌿",
-    decorColor: "text-[#a8c89a]",
-  },
-  Parenting: {
-    bg: "bg-[#f9f2ee]",
-    tag: "bg-[#fce8eb] text-[#d96e83] border-[#f2a7b0]",
-    emoji: "👶",
-    decor: "🌷",
-    decorColor: "text-[#d96e83]",
-  },
-  "Cuộc sống": {
-    bg: "bg-[#fcf5ea]",
-    tag: "bg-[#fcf5ea] text-[#b78a54] border-[#f1ddd8]",
-    emoji: "🌻",
-    decor: "🌿",
-    decorColor: "text-[#b78a54]",
-  },
-};
-
 const PostCard: React.FC<PostCardProps> = ({
   slug,
   title,
@@ -66,7 +27,7 @@ const PostCard: React.FC<PostCardProps> = ({
   thumbnailUrl,
   horizontal = false,
 }) => {
-  const currentStyle = styleMap[category];
+  const currentStyle = getBlogCategoryStyle(getCategorySlug(category));
   const tagText = categoryLabel ?? category;
 
   return (
@@ -82,7 +43,7 @@ const PostCard: React.FC<PostCardProps> = ({
       >
         <div
           className={[
-            `relative flex items-center justify-center ${currentStyle.bg}`,
+            `relative flex items-center justify-center ${currentStyle.imageClass}`,
             horizontal
               ? "h-[180px] w-full md:h-auto md:w-[240px]"
               : "h-[180px] w-full",
@@ -111,7 +72,7 @@ const PostCard: React.FC<PostCardProps> = ({
         <div className="flex flex-1 flex-col p-6">
           <div className="mb-4">
             <span
-              className={`rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${currentStyle.tag}`}
+              className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${currentStyle.tagClass}`}
             >
               {tagText}
             </span>
@@ -140,3 +101,10 @@ const PostCard: React.FC<PostCardProps> = ({
 };
 
 export default PostCard;
+
+function getCategorySlug(category: PostCategory) {
+  if (category === "Yoga") return "yoga";
+  if (category === "Tài chính") return "finance";
+  if (category === "Parenting") return "parenting";
+  return "life";
+}
