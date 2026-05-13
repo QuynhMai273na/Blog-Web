@@ -99,6 +99,9 @@ const toggleMeta: Array<{
 ];
 
 const averageWordsPerMinute = 220;
+const editorPageBackground =
+  // "bg-[radial-gradient(circle_at_top_left,rgba(252,228,230,0.78),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(209,231,221,0.56),transparent_32%),linear-gradient(180deg,#fdfbf6_0%,#f8f1e7_50%,#fcfaf6_100%)]";
+  "bg-[radial-gradient(circle_at_top_left,rgba(252,228,230,0.78),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(209,231,221,0.56),transparent_32%),radial-gradient(circle_at_12%_88%,rgba(252,228,230,0.6),transparent_34%),radial-gradient(circle_at_88%_88%,rgba(209,231,221,0.55),transparent_34%),linear-gradient(180deg,#fdfbf6_0%,#f8f1e7_50%,#fcfaf6_100%)]";
 
 type NoticeState = {
   tone: "success" | "error";
@@ -206,13 +209,13 @@ function SidebarSection({
         className="flex w-full items-center justify-between px-5 py-4 text-left"
       >
         <div className="flex items-center gap-2.5">
-          <Icon className={`h-4 w-4 ${iconColor}`} />
-          <span className="font-serif text-[1.35rem] font-normal italic text-[#4a3737]">
+          <Icon className={`h-6 w-6 ${iconColor}`} />
+          <span className="font-serif text-xl font-normal tracking-[1px] leading-[1.4] text-text_primary">
             {title}
           </span>
         </div>
         <span
-          className={`text-sm text-[#b09292] transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+          className={`text-sm text-text_secondary transition-transform duration-200 ${open ? "rotate-180" : ""}`}
         >
           ▾
         </span>
@@ -228,15 +231,21 @@ function SidebarSection({
 
 export default function WritePage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-full items-center justify-center bg-[#f7f2ed] px-4">
-          <p className="font-sans text-sm text-[#7a5a55]">Đang tải editor...</p>
-        </div>
-      }
+    <main
+      className={`${cormorant.variable} min-h-dvh bg-[radial-gradient(circle_at_top_left,rgba(252,228,230,0.78),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(209,231,221,0.56),transparent_32%),linear-gradient(180deg,#fdfbf6_0%,#f8f1e7_50%,#fcfaf6_100%)]`}
     >
-      <WritePageContent />
-    </Suspense>
+      <Suspense
+        fallback={
+          <div className="flex min-h-dvh items-center justify-center px-4">
+            <p className="font-sans text-sm text-[#7a5a55]">
+              Đang tải editor...
+            </p>
+          </div>
+        }
+      >
+        <WritePageContent />
+      </Suspense>
+    </main>
   );
 }
 
@@ -254,10 +263,14 @@ function WritePageContent() {
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [coverFileName, setCoverFileName] = useState("");
   const [isDragging, setIsDragging] = useState(false);
-  const [category, setCategory] = useState<BlogCategorySlug>(categoryOptions[0].value);
+  const [category, setCategory] = useState<BlogCategorySlug>(
+    categoryOptions[0].value,
+  );
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [authState, setAuthState] = useState<"loading" | "admin" | "forbidden">("loading");
+  const [authState, setAuthState] = useState<"loading" | "admin" | "forbidden">(
+    "loading",
+  );
   const [notice, setNotice] = useState<NoticeState>(null);
   const [isSaving, setIsSaving] = useState<SaveIntent | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -272,7 +285,7 @@ function WritePageContent() {
     publish: true,
     cover: false,
     category: false,
-       options: false,
+    options: false,
   });
 
   const editor = useEditor({
@@ -322,20 +335,21 @@ function WritePageContent() {
 
     fetch(`/api/admin/posts/${editSlug}`)
       .then(async (response) => {
-        const result = (await response.json().catch(() => null)) as
-          | {
-              post?: {
-                id: string;
-                title: string;
-                summary: string | null;
-                content: string | null;
-                status: PublishMode;
-                published_at: string | null;
-                categories: { slug: BlogCategorySlug | null } | Array<{ slug: BlogCategorySlug | null }> | null;
-              };
-              error?: string;
-            }
-          | null;
+        const result = (await response.json().catch(() => null)) as {
+          post?: {
+            id: string;
+            title: string;
+            summary: string | null;
+            content: string | null;
+            status: PublishMode;
+            published_at: string | null;
+            categories:
+              | { slug: BlogCategorySlug | null }
+              | Array<{ slug: BlogCategorySlug | null }>
+              | null;
+          };
+          error?: string;
+        } | null;
 
         if (!response.ok || !result?.post) {
           setNotice({
@@ -355,11 +369,16 @@ function WritePageContent() {
         setCategory(postCategory?.slug ?? categoryOptions[0].value);
         setPublishMode(result.post.status ?? "draft");
         setScheduledAt(toDatetimeLocalValue(result.post.published_at));
-        editor.commands.setContent(plainContentToHtml(result.post.content ?? ""));
+        editor.commands.setContent(
+          plainContentToHtml(result.post.content ?? ""),
+        );
       })
       .catch((error: unknown) => {
         console.error("[write.edit.load]", error);
-        setNotice({ tone: "error", message: "Không thể tải bài viết cần sửa." });
+        setNotice({
+          tone: "error",
+          message: "Không thể tải bài viết cần sửa.",
+        });
       });
   }, [authState, editSlug, editor]);
 
@@ -459,27 +478,29 @@ function WritePageContent() {
     const response = await fetch(
       editingPostId ? `/api/admin/posts/${editingPostId}` : "/api/admin/posts",
       {
-      method: editingPostId ? "PATCH" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        excerpt,
-        content: toPlainPostContent(editor?.getJSON()),
-        html: editor?.getHTML() ?? "",
-        category,
-        tags,
-      
-        coverImage,
-        coverFileName,
-        publishMode: requestedMode,
-        scheduledAt: requestedMode === "scheduled" ? scheduledAt : null,
-        options: toggles,
-      }),
-    });
+        method: editingPostId ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          excerpt,
+          content: toPlainPostContent(editor?.getJSON()),
+          html: editor?.getHTML() ?? "",
+          category,
+          tags,
 
-    const result = (await response.json().catch(() => null)) as
-      | { error?: string; post?: { slug: string; status: string } }
-      | null;
+          coverImage,
+          coverFileName,
+          publishMode: requestedMode,
+          scheduledAt: requestedMode === "scheduled" ? scheduledAt : null,
+          options: toggles,
+        }),
+      },
+    );
+
+    const result = (await response.json().catch(() => null)) as {
+      error?: string;
+      post?: { slug: string; status: string };
+    } | null;
 
     setIsSaving(null);
 
@@ -493,15 +514,17 @@ function WritePageContent() {
 
     setNotice({
       tone: "success",
-      message:
-        editingPostId
-          ? "Bài viết đã được cập nhật."
-          : result.post.status === "published"
-            ? "Bài viết đã được đăng."
-            : result.post.status === "scheduled"
-              ? "Bài viết đã được lên lịch."
-              : "Bản nháp đã được lưu.",
-      href: result.post.status === "published" ? `/posts/${result.post.slug}` : "/dashboard",
+      message: editingPostId
+        ? "Bài viết đã được cập nhật."
+        : result.post.status === "published"
+          ? "Bài viết đã được đăng."
+          : result.post.status === "scheduled"
+            ? "Bài viết đã được lên lịch."
+            : "Bản nháp đã được lưu.",
+      href:
+        result.post.status === "published"
+          ? `/posts/${result.post.slug}`
+          : "/dashboard",
     });
 
     if (result.post.status === "published") {
@@ -511,15 +534,17 @@ function WritePageContent() {
 
   if (authState === "loading") {
     return (
-      <div className="flex min-h-full items-center justify-center bg-[#f7f2ed] px-4">
-        <p className="font-sans text-sm text-[#7a5a55]">Đang kiểm tra quyền admin...</p>
+      <div className="flex h-full items-center justify-center px-4">
+        <p className="font-sans text-sm text-[#7a5a55]">
+          Đang kiểm tra quyền admin...
+        </p>
       </div>
     );
   }
 
   if (authState === "forbidden") {
     return (
-      <div className="flex min-h-full items-center justify-center bg-[#f7f2ed] px-4">
+      <div className="flex h-full items-center justify-center px-4">
         <section className="w-full max-w-md rounded-[20px] border border-[#f0e6e0] bg-white p-8 text-center shadow-[0_4px_32px_rgba(74,44,42,0.07)]">
           <h1 className="font-serif text-2xl font-semibold text-[#3a2520]">
             Chỉ admin mới được viết bài
@@ -539,13 +564,7 @@ function WritePageContent() {
   }
 
   return (
-    <div className={`${cormorant.variable} relative isolate min-h-full`}>
-      {/* Background */}
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(252,228,230,0.78),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(209,231,221,0.56),transparent_32%),linear-gradient(180deg,#fdfbf6_0%,#f8f1e7_50%,#fcfaf6_100%)]"
-      />
-
+    <div className={` ${editorPageBackground}`}>
       {/* ── page header ── */}
       <header className="relative flex items-start justify-between bg-white/80 px-6 py-8 shadow-[0_24px_70px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
         <div>
@@ -555,17 +574,19 @@ function WritePageContent() {
         </div>
 
         <div className="absolute left-1/2 top-6 w-full max-w-2xl -translate-x-1/2 text-center px-4">
-          <h1 className="mt-3 font-serif text-[2.3rem] font-normal text-[#3d2f2f] md:text-[3.2rem]">
+          <h1 className="mt-3 font-serif text-3xl font-normal leading-[1.4] tracking-normal text-text_black md:text-[40px]">
             {editingPostId ? "Sửa bài viết" : "Viết bài mới"}
           </h1>
-          <p className="mt-2 text-sm text-[#7f6d6d]">
+          <p className="mt-2 text-base text-[#7f6d6d]">
             Soạn nội dung, lưu nháp, xem trước, đăng ngay hoặc lên lịch.
           </p>
         </div>
 
-        <div className="rounded-[24px] border border-sage-100 bg-sage-50/80 px-5 py-4 text-sm text-[#64806f] shadow-sm">
-          <p className="font-medium">Chỉnh sửa lần cuối</p>
-          <p className="mt-1 text-[13px] text-[#7c9283]">
+        <div className="rounded-[24px] border border-sage-100 bg-sage-50/80 px-5 py-4 shadow-sm">
+          <p className="font-medium text-base text-[#64806f]">
+            Chỉnh sửa lần cuối
+          </p>
+          <p className="mt-1 text-base text-[#7c9283]">
             {new Intl.DateTimeFormat("vi-VN", {
               day: "2-digit",
               month: "2-digit",
@@ -693,7 +714,7 @@ function WritePageContent() {
               <div className="px-7 pt-7 md:px-10 md:pt-10">
                 <label
                   htmlFor="title"
-                  className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#b28d8d]"
+                  className="text-base font-semibold uppercase tracking-[0.2em] text-text_secondary"
                 >
                   Tiêu đề
                 </label>
@@ -702,7 +723,7 @@ function WritePageContent() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Đặt tiêu đề bài viết"
-                  className="mt-3 w-full border-none bg-transparent text-[2.2rem] italic leading-[1.2] text-[#3a312f] outline-none placeholder:text-[#c4b5b1] md:text-[3rem]"
+                  className="mt-3 w-full border-none bg-transparent text-2xl italic leading-[1.2] text-[#3a312f] outline-none placeholder:text-[#c4b5b1] md:text-3xl"
                   style={{ fontFamily: "var(--font-cormorant)" }}
                 />
               </div>
@@ -713,7 +734,7 @@ function WritePageContent() {
               <div className="px-7 md:px-10">
                 <label
                   htmlFor="excerpt"
-                  className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#b28d8d]"
+                  className="text-base font-semibold uppercase tracking-[0.2em] text-text_secondary"
                 >
                   Tóm tắt hiển thị ngoài danh sách
                 </label>
@@ -722,7 +743,7 @@ function WritePageContent() {
                   value={excerpt}
                   onChange={(e) => setExcerpt(e.target.value)}
                   placeholder="Viết 1-2 câu mô tả ngắn"
-                  className="mt-3 min-h-[72px] w-full resize-none bg-transparent font-serif text-[1.05rem] italic leading-[1.8] text-[#6a5555] outline-none placeholder:text-[#c4b5b1]"
+                  className="mt-3 min-h-[72px] w-full resize-none bg-transparent font-serif text-base italic leading-[1.4] text-[#3c3331] outline-none placeholder:text-[#c4b5b1]"
                 />
               </div>
 
@@ -732,13 +753,10 @@ function WritePageContent() {
               <div className="bg-[#fdfcfb] border-t border-rose-100/60">
                 <div className="flex items-center justify-between px-7 py-4 md:px-10">
                   <div>
-                    <p
-                      className="font-serif text-[1.2rem] italic text-[#6a5555]"
-                      style={{ fontFamily: "var(--font-cormorant)" }}
-                    >
+                    <p className="text-base font-semibold uppercase tracking-[0.2em] text-text_secondary">
                       Nội dung chính
                     </p>
-                    <p className="mt-0.5 text-[12px] text-[#b09292]">
+                    <p className="mt-0.5 font-serif text-base tracking-normal italic leading-[1.4] text-[#c6b7b3]">
                       Viết như Word — chọn text để format
                     </p>
                   </div>
@@ -788,7 +806,9 @@ function WritePageContent() {
                 {notice ? (
                   <p
                     className={`text-[12px] font-medium ${
-                      notice.tone === "success" ? "text-[#64806f]" : "text-rose-500"
+                      notice.tone === "success"
+                        ? "text-[#64806f]"
+                        : "text-rose-500"
                     }`}
                   >
                     {notice.message}
@@ -800,7 +820,8 @@ function WritePageContent() {
                   </p>
                 ) : (
                   <p className="text-[12px] italic text-[#8b7777]">
-                    Bài mới sẽ chỉ được lưu khi tài khoản admin xác nhận thao tác.
+                    Bài mới sẽ chỉ được lưu khi tài khoản admin xác nhận thao
+                    tác.
                   </p>
                 )}
               </div>
@@ -842,11 +863,11 @@ function WritePageContent() {
                         <span
                           className={`h-2 w-2 rounded-full ${option.dot}`}
                         />
-                        <span className="text-[14px] font-semibold text-[#5c4747]">
+                        <span className="text-base font-semibold text-text_secondary">
                           {option.label}
                         </span>
                       </span>
-                      <span className="text-[11px] text-[#9b8888]">
+                      <span className="text-sm text-text_secondary">
                         {active ? option.helper : "Chọn"}
                       </span>
                     </button>
@@ -940,12 +961,12 @@ function WritePageContent() {
             <SidebarSection
               id="category"
               icon={Type}
-              title="Phân loại & Tags"
+              title="Phân loại - Tags"
               iconColor="text-[#d5ab72]"
               open={sidebarOpen.category}
               onToggle={toggleSidebar}
             >
-              <label className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#a58f8f]">
+              <label className="text-xs font-semibold uppercase tracking-[0.22em] text-[#a58f8f]">
                 Danh mục chính
               </label>
               <div className="relative mt-2">
@@ -958,7 +979,7 @@ function WritePageContent() {
                 />
               </div>
 
-              <label className="mt-4 block text-[11px] font-semibold uppercase tracking-[0.22em] text-[#a58f8f]">
+              <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.22em] text-[#a58f8f]">
                 Tags
               </label>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -1001,7 +1022,7 @@ function WritePageContent() {
                 </button>
               </div>
             </SidebarSection>
-    
+
             <SidebarSection
               id="options"
               icon={Check}
@@ -1018,7 +1039,7 @@ function WritePageContent() {
                     onClick={() => handleToggle(key)}
                     className="flex w-full items-center justify-between rounded-[16px] border border-rose-100 bg-white px-4 py-3 text-left hover:border-rose-200"
                   >
-                    <span className="flex items-center gap-2.5 text-sm text-[#6f5a5a]">
+                    <span className="flex items-center gap-2.5 text-base text-[#6f5a5a]">
                       <Icon className="h-4 w-4 text-[#aeb8c6]" />
                       {label}
                     </span>
@@ -1063,7 +1084,11 @@ function WritePageContent() {
               <section className="border-b border-rose-100/80 bg-white/95 px-4 pb-16 pt-8 shadow-[0_12px_40px_rgba(45,62,47,0.04)] md:px-6 md:pt-10">
                 <header className="mx-auto max-w-4xl text-center">
                   <span className="inline-flex rounded-full border border-sage-100 bg-sage-50 px-4 py-1.5 text-[12px] font-medium text-[#6c8f7a] shadow-sm">
-                    {categoryOptions.find((option) => option.value === category)?.label}
+                    {
+                      categoryOptions.find(
+                        (option) => option.value === category,
+                      )?.label
+                    }
                   </span>
                   <h1 className="mx-auto mt-6 max-w-4xl font-serif text-[2.5rem] font-normal leading-[1.24] text-[#3d2f2f] md:text-[4rem]">
                     {title || "Chưa có tiêu đề"}
@@ -1113,7 +1138,10 @@ function validatePost({
   if (publishMode === "scheduled" && !scheduledAt) {
     return "Vui lòng chọn ngày giờ đăng khi lên lịch.";
   }
-  if (publishMode === "scheduled" && new Date(scheduledAt).getTime() <= Date.now()) {
+  if (
+    publishMode === "scheduled" &&
+    new Date(scheduledAt).getTime() <= Date.now()
+  ) {
     return "Ngày giờ lên lịch phải nằm trong tương lai.";
   }
   return null;
@@ -1139,7 +1167,8 @@ function nodeToText(node: unknown): string {
   const text = (item.content ?? []).map(nodeToText).join("");
 
   if (item.type === "text") return item.text ?? "";
-  if (item.type === "heading") return `${"#".repeat(item.attrs?.level ?? 2)} ${text}`.trim();
+  if (item.type === "heading")
+    return `${"#".repeat(item.attrs?.level ?? 2)} ${text}`.trim();
   if (item.type === "blockquote") return text ? `> ${text}` : "";
   if (item.type === "bulletList" || item.type === "orderedList") return text;
   if (item.type === "listItem") return text ? `- ${text}` : "";
@@ -1161,9 +1190,12 @@ function plainContentToHtml(content: string) {
     .map((block) => {
       const trimmed = block.trim();
       if (!trimmed) return "";
-      if (trimmed.startsWith("### ")) return `<h3>${escapeHtml(trimmed.slice(4))}</h3>`;
-      if (trimmed.startsWith("## ")) return `<h2>${escapeHtml(trimmed.slice(3))}</h2>`;
-      if (trimmed.startsWith("> ")) return `<blockquote><p>${escapeHtml(trimmed.slice(2))}</p></blockquote>`;
+      if (trimmed.startsWith("### "))
+        return `<h3>${escapeHtml(trimmed.slice(4))}</h3>`;
+      if (trimmed.startsWith("## "))
+        return `<h2>${escapeHtml(trimmed.slice(3))}</h2>`;
+      if (trimmed.startsWith("> "))
+        return `<blockquote><p>${escapeHtml(trimmed.slice(2))}</p></blockquote>`;
       return `<p>${escapeHtml(trimmed).replace(/\n/g, "<br>")}</p>`;
     })
     .join("");

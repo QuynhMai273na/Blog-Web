@@ -175,7 +175,7 @@ export default function AuthAvatarMenu() {
               Viết bài mới
             </Link>
           )}
-          {/* {isAdmin && (
+          {isAdmin && (
             <Link
               href="/dashboard"
               role="menuitem"
@@ -183,9 +183,9 @@ export default function AuthAvatarMenu() {
               className="flex items-center gap-2 px-4 py-2.5 font-sans text-sm font-semibold text-[#c85f70] transition hover:bg-[#fff5f6]"
             >
               <LayoutDashboard className="h-4 w-4" aria-hidden="true" />
-              Dashboard
+              Quản trị blog
             </Link>
-          )} */}
+          )}
           <button
             type="button"
             role="menuitem"

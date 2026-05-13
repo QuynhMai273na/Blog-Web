@@ -1,4 +1,5 @@
 import PostCard from "@/components/blog/PostCard";
+import { SubscribeForm } from "@/components/forms/SubscribeForm";
 import {
   BLOG_CATEGORY_SLUGS,
   type BlogCategorySlug,
@@ -108,10 +109,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
       <section className="mx-auto max-w-5xl px-5">
         <div className="mb-8 text-center">
-          <h2
-            className="mb-1 font-serif font-bold text-sage-800"
-            style={{ fontSize: "1.75rem" }}
-          >
+          <h2 className="mb-1 font-serif text-3xl font-bold tracking-[1px] text-sage-800/90">
             Bài viết mới nhất
           </h2>
           <p className="font-serif text-base  text-sage-800/85">
@@ -140,27 +138,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             Xem tất cả bài viết
           </Link>
         </div>
-        <h2 className="my-2 font-serif text-3xl font-bold  tracking-[1px] text-sage-800/90">
+        <h2 className="my-2 font-serif text-3xl font-bold tracking-[1px] text-sage-800/90">
           Cùng mình đi qua hành trình mỗi tuần nhé
         </h2>
         <p className="mb-8 font-serif text-[13px]  text-sage-800">
           Đăng ký email để nhận thông báo về những bài viết mới nhất.
         </p>
 
-        <form className="mx-auto flex max-w-md flex-col gap-3 sm:flex-row">
-          <input
-            type="email"
-            placeholder="email của bạn..."
-            required
-            className="flex-1 rounded-xl border border-white/15 bg-[#3a4f3c] px-4 py-3 text-[14px] text-white outline-none transition-colors placeholder:text-white/35 focus:border-sage-300"
-          />
-          <button
-            type="submit"
-            className="whitespace-nowrap rounded-xl bg-sage-300 px-7 py-3 text-[14px] font-medium text-white transition-all hover:bg-sage-800"
-          >
-            Đăng ký
-          </button>
-        </form>
+        <SubscribeForm variant="home" placeholder="email của bạn..." />
       </section>
     </div>
   );

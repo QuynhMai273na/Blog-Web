@@ -19,11 +19,11 @@ export default function AboutPage() {
 
           {/* Nội dung Intro */}
           <div className="flex-1 text-center md:text-left mt-4 md:mt-8">
-            <h1 className="mb-2 font-serif text-3xl md:text-[40px] text-[#3a2520]">
+            <h1 className="mb-2 font-serif text-3xl font-normal leading-[1.4] tracking-normal  md:text-[40px] text-text_primary">
               Xin chào, mình là
             </h1>
-            <h2 className="mb-6 font-serif text-4xl md:text-[48px]  text-[#d96e83]">
-              Becoming Blooming
+            <h2 className="mb-6 font-serif text-3xl font-normal leading-[1.4] tracking-normal md:text-[40px] text-[#d96e83]">
+              Nguyễn Thị Quỳnh Giang
             </h2>
             <p className="mb-8 text-base font-light leading-relaxed text-[#7a5a55] ">
               Mình là một người phụ nữ 30-, đang trong hành trình học cách làm
@@ -51,11 +51,11 @@ export default function AboutPage() {
       </section>
 
       {/* 2. Phần Nội dung chi tiết (Nền Beige) */}
-      <div className="w-full py-12 px-4 md:px-8 pb-20 bg-cream">
+      <div className="w-full pt-12 px-4 md:px-8 pb-4 bg-cream">
         <div className="max-w-7xl mx-auto space-y-8">
           {/* Câu chuyện của mình */}
           <section className="rounded-[24px] border border-[#f0e6e0] bg-white p-8 md:p-10 shadow-sm">
-            <h3 className="mb-4 font-serif  text-2xl md:text-3xl text-[#3a2520]">
+            <h3 className="mb-4 font-serif font-normal text-2xl tracking-normal md:text-3xl text-text_primary">
               <span>🌱</span>
               <span className=""> Câu chuyện của mình</span>
             </h3>
@@ -70,7 +70,7 @@ export default function AboutPage() {
 
           {/* Những điều mình tin tưởng */}
           <section className="rounded-[24px] border border-[#f0e6e0] bg-white p-8 md:p-10 shadow-sm">
-            <h3 className="mb-6 ml-2 font-serif text-2xl md:text-3xl  text-[#3a2520]">
+            <h3 className="mb-6 ml-2 font-serif font-normal text-2xl tracking-normal md:text-3xl text-text_primary">
               <span>💫</span>
               <span className="">Những điều mình tin tưởng</span>
             </h3>
