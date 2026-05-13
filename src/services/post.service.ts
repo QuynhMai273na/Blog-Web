@@ -55,10 +55,12 @@ export async function getPublishedPosts(options?: {
   limit?: number;
   categorySlug?: string;
   orderBy?: "published_at" | "created_at";
+  query?: string;
 }) {
   const supabase = createClient();
   const selectClause =
     "id,title,slug,summary,content,published_at,created_at,tags,categories!inner(name,slug)";
+  const normalizedQuery = normalizeSearchQuery(options?.query);
 
   let query = supabase
     .from("posts")
@@ -71,7 +73,7 @@ export async function getPublishedPosts(options?: {
     query = query.eq("categories.slug", options.categorySlug);
   }
 
-  if (options?.limit) {
+  if (options?.limit && !normalizedQuery) {
     query = query.limit(options.limit);
   }
 
@@ -82,7 +84,12 @@ export async function getPublishedPosts(options?: {
     return [];
   }
 
-  return attachCommentCounts((data ?? []) as PostRow[]);
+  const rows = ((data ?? []) as PostRow[]).filter((post) =>
+    matchesPostSearch(post, normalizedQuery),
+  );
+  const limitedRows = options?.limit ? rows.slice(0, options.limit) : rows;
+
+  return attachCommentCounts(limitedRows);
 }
 
 export async function getLatestPostsByCategorySlugs(categorySlugs: string[]) {
@@ -136,7 +143,7 @@ export async function getCategoryOptions() {
   }));
 }
 
-export async function getAdminPosts(options?: { limit?: number }) {
+export async function getAdminPosts(options?: { limit?: number; offset?: number }) {
   const supabase = createClient();
   await publishDueScheduledPosts(supabase);
 
@@ -145,7 +152,9 @@ export async function getAdminPosts(options?: { limit?: number }) {
     .select("id,title,slug,summary,content,published_at,created_at,status,tags,categories(name,slug)")
     .order("created_at", { ascending: false });
 
-  if (options?.limit) {
+  if (options?.limit && typeof options.offset === "number") {
+    query = query.range(options.offset, options.offset + options.limit - 1);
+  } else if (options?.limit) {
     query = query.limit(options.limit);
   }
 
@@ -293,6 +302,35 @@ function getExcerpt(content: string) {
 
   if (!firstParagraph) return "";
   return firstParagraph.trim().slice(0, 180);
+}
+
+function normalizeSearchQuery(value: string | undefined) {
+  const trimmed = normalizeSearchText(value ?? "").trim();
+  return trimmed || undefined;
+}
+
+function matchesPostSearch(post: PostRow, query: string | undefined) {
+  if (!query) return true;
+
+  const searchableText = [
+    post.title,
+    post.summary,
+    post.content,
+    ...(post.tags ?? []),
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return normalizeSearchText(searchableText).includes(query);
+}
+
+function normalizeSearchText(value: string) {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D")
+    .toLowerCase();
 }
 
 function getIntroParagraphs(content: string) {
