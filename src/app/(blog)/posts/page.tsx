@@ -114,7 +114,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
                         className="h-full w-full rounded-[14px] object-cover"
                       />
                     ) : (
-                      <span>{getCategoryIcon(post.categorySlug)}</span>
+                      <span>{categoryStyle.icon}</span>
                     )}
                   </div>
 

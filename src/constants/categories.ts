@@ -6,6 +6,8 @@ export const BLOG_CATEGORIES = [
     imageClass: "bg-[#e6f7f2]",
     heroImage: "/images/bg_img_yoga.png",
     icon: "🧘",
+    decorIcon: "🌸",
+    decorClass: "text-[#d96e83]",
   },
   {
     slug: "parenting",
@@ -14,6 +16,8 @@ export const BLOG_CATEGORIES = [
     imageClass: "bg-[#fce8eb]",
     heroImage: "/images/bg_img_parenting.png",
     icon: "👶",
+    decorIcon: "🌸",
+    decorClass: "text-[#d96e83]",
   },
   {
     slug: "finance",
@@ -22,6 +26,8 @@ export const BLOG_CATEGORIES = [
     imageClass: "bg-[#dcefd8]",
     heroImage: "/images/bg_img_finance.png",
     icon: "💰",
+    decorIcon: "🌸",
+    decorClass: "text-[#d96e83]",
   },
   {
     slug: "life",
@@ -30,6 +36,8 @@ export const BLOG_CATEGORIES = [
     imageClass: "bg-[#f4effb]",
     heroImage: "/images/bg_img_life.png",
     icon: "🌻",
+    decorIcon: "🌸",
+    decorClass: "text-[#d96e83]",
   },
 ] as const;
 
@@ -38,6 +46,8 @@ export const DEFAULT_BLOG_CATEGORY_STYLE = {
   imageClass: "bg-[#f9f2ee]",
   heroImage: "/images/bg_img_life.png",
   icon: "🌻",
+  decorIcon: "🌸",
+  decorClass: "text-[#d96e83]",
 } as const;
 
 export type BlogCategorySlug = (typeof BLOG_CATEGORIES)[number]["slug"];
@@ -66,6 +76,8 @@ export function getBlogCategoryStyle(slug: string | null) {
         imageClass: category.imageClass,
         heroImage: category.heroImage,
         icon: category.icon,
+        decorIcon: category.decorIcon,
+        decorClass: category.decorClass,
       }
     : DEFAULT_BLOG_CATEGORY_STYLE;
 }

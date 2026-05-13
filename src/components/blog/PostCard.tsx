@@ -58,12 +58,12 @@ const PostCard: React.FC<PostCardProps> = ({
           ) : (
             <>
               <span className="text-6xl drop-shadow-md transition-transform duration-500 group-hover:scale-110">
-                {currentStyle.emoji}
+                {currentStyle.icon}
               </span>
               <span
-                className={`absolute bottom-3 right-4 text-2xl opacity-60 ${currentStyle.decorColor}`}
+                className={`absolute bottom-3 right-4 text-2xl opacity-60 ${currentStyle.decorClass}`}
               >
-                {currentStyle.decor}
+                {currentStyle.decorIcon}
               </span>
             </>
           )}
