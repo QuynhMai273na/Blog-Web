@@ -141,7 +141,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <h2 className="my-2 font-serif text-3xl font-bold tracking-[1px] text-sage-800/90">
           Cùng mình đi qua hành trình mỗi tuần nhé
         </h2>
-        <p className="mb-8 font-serif text-[13px]  text-sage-800">
+        <p className="mb-8 font-serif text-base  text-sage-800">
           Đăng ký email để nhận thông báo về những bài viết mới nhất.
         </p>
 

@@ -12,8 +12,8 @@ const mainLinks = [
 ];
 
 const postCategories = [
-  { name: "Làm mẹ", href: "/category/parenting" },
   { name: "Yoga & Sức khỏe", href: "/category/yoga" },
+  { name: "Làm mẹ", href: "/category/parenting" },
   { name: "Tài chính cá nhân", href: "/category/finance" },
   { name: "Cuộc sống", href: "/category/life" },
 ];

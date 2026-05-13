@@ -2,24 +2,43 @@ export const BLOG_CATEGORIES = [
   {
     slug: "yoga",
     label: "Yoga & Sức khỏe",
-    tagClass: "border-[#d1e7dd] bg-[#f1f8f5] text-[#6b9b84]",
+    tagClass: "bg-sage-100 text-sage-500 border border-sage-300",
+    imageClass: "bg-[#e6f7f2]",
+    heroImage: "/images/bg_img_yoga.png",
+    icon: "🧘",
   },
   {
     slug: "parenting",
     label: "Làm mẹ",
-    tagClass: "border-[#f2a7b0] bg-[#fce8eb] text-[#d96e83]",
+    tagClass: "bg-rose-100 text-rose-500 border border-rose-400",
+    imageClass: "bg-[#fce8eb]",
+    heroImage: "/images/bg_img_parenting.png",
+    icon: "👶",
   },
   {
     slug: "finance",
     label: "Tài chính cá nhân",
-    tagClass: "border-[#f1ddd8] bg-[#fdf6f0] text-[#c98e55]",
+    tagClass: "bg-sand-100 text-sand-500 border border-sand-300",
+    imageClass: "bg-[#dcefd8]",
+    heroImage: "/images/bg_img_finance.png",
+    icon: "💰",
   },
   {
     slug: "life",
     label: "Cuộc sống",
-    tagClass: "border-[#d1e7dd] bg-[#f1f8f5] text-[#6b9b84]",
+    tagClass: "bg-[#f3eefc] text-[#8b6bb8] border border-[#d9c8f0]",
+    imageClass: "bg-[#f4effb]",
+    heroImage: "/images/bg_img_life.png",
+    icon: "🌻",
   },
 ] as const;
+
+export const DEFAULT_BLOG_CATEGORY_STYLE = {
+  tagClass: "bg-sand-100 text-sand-500 border border-sand-300",
+  imageClass: "bg-[#f9f2ee]",
+  heroImage: "/images/bg_img_life.png",
+  icon: "🌻",
+} as const;
 
 export type BlogCategorySlug = (typeof BLOG_CATEGORIES)[number]["slug"];
 
@@ -36,4 +55,17 @@ export function getBlogCategoryLabel(
     fallback ??
     "Cuộc sống"
   );
+}
+
+export function getBlogCategoryStyle(slug: string | null) {
+  const category = BLOG_CATEGORIES.find((item) => item.slug === slug);
+
+  return category
+    ? {
+        tagClass: category.tagClass,
+        imageClass: category.imageClass,
+        heroImage: category.heroImage,
+        icon: category.icon,
+      }
+    : DEFAULT_BLOG_CATEGORY_STYLE;
 }

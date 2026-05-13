@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import { PostActions } from "@/components/dashboard/PostActions";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { Pagination } from "@/components/ui/Pagination";
+import { getBlogCategoryStyle } from "@/constants/categories";
 import { createClient } from "@/lib/supabase/server";
 import { getCategoryOptions, getPublishedPosts } from "@/services/post.service";
 
@@ -12,41 +13,6 @@ type PostsPageProps = {
 
 export const dynamic = "force-dynamic";
 const POSTS_PER_PAGE = 4;
-
-const CATEGORY_STYLES: Record<string, { tagStyle: string; imgBg: string }> = {
-  yoga: {
-    tagStyle: "bg-sage-100 text-sage-500 border border-sage-300",
-    imgBg: "bg-[#e6f7f2]",
-  },
-  finance: {
-    tagStyle: "bg-sand-100 text-sand-500 border border-sand-300",
-    imgBg: "bg-[#dcefd8]",
-  },
-  parenting: {
-    tagStyle: "bg-rose-100 text-rose-500 border border-rose-400",
-    imgBg: "bg-[#fce8eb]",
-  },
-  health: {
-    tagStyle: "bg-sage-100 text-sage-500 border border-sage-300",
-    imgBg: "bg-[#e5f0f5]",
-  },
-};
-
-const DEFAULT_STYLE = {
-  tagStyle: "bg-sand-100 text-sand-500 border border-sand-300",
-  imgBg: "bg-[#f9f2ee]",
-};
-
-function getCategoryStyle(slug: string) {
-  return CATEGORY_STYLES[slug] ?? DEFAULT_STYLE;
-}
-
-function getCategoryIcon(slug: string) {
-  if (slug === "yoga") return "🧘";
-  if (slug === "finance") return "💰";
-  if (slug === "parenting") return "👶";
-  return "🌻";
-}
 
 export default async function PostsPage({ searchParams }: PostsPageProps) {
   const params = await searchParams;
@@ -130,7 +96,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
 
       <section className="flex w-full flex-1 flex-col">
         {posts.map((post) => {
-          const { tagStyle, imgBg } = getCategoryStyle(post.categorySlug);
+          const categoryStyle = getBlogCategoryStyle(post.categorySlug);
           return (
             <article
               key={post.id}
@@ -139,15 +105,15 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
               <div className="mx-auto flex max-w-5xl flex-col gap-5 px-6 py-8 md:flex-row md:items-center md:gap-10">
                 <Link href={`/posts/${post.slug}`} className="contents">
                   <div
-                    className={`flex h-[110px] w-full flex-shrink-0 items-center justify-center rounded-[14px] border border-rose-200/65 text-[40px] shadow-sm transition-transform hover:scale-105 md:w-[160px] ${imgBg}`}
+                    className={`flex h-[110px] w-full flex-shrink-0 items-center justify-center rounded-[14px] border border-rose-200/65 text-[40px] shadow-sm transition-transform hover:scale-105 md:w-[160px] ${categoryStyle.imageClass}`}
                   >
-                    <span>{getCategoryIcon(post.categorySlug)}</span>
+                    <span>{categoryStyle.icon}</span>
                   </div>
 
                   <div className="flex flex-1 flex-col justify-center">
                     <div className="mb-2">
                       <span
-                        className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${tagStyle}`}
+                        className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${categoryStyle.tagClass}`}
                       >
                         {post.categoryLabel}
                       </span>
