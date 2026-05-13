@@ -30,7 +30,6 @@ import {
   ReactNode,
   Suspense,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -319,6 +318,7 @@ function WritePageContent() {
   const [isCoverUploading, setIsCoverUploading] = useState(false);
   const [inlineUploadCount, setInlineUploadCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [wordCount, setWordCount] = useState(0);
   const [category, setCategory] = useState<BlogCategorySlug>(
     categoryOptions[0].value,
   );
@@ -355,6 +355,9 @@ function WritePageContent() {
       TiptapLink.configure({ openOnClick: false }),
     ],
     content: "",
+    onUpdate: ({ editor }) => {
+      setWordCount(countWords(editor.getText()));
+    },
     editorProps: {
       attributes: {
         class:
@@ -476,6 +479,7 @@ function WritePageContent() {
               >[0])
             : plainContentToHtml(post.content ?? ""),
         );
+        setWordCount(countWords(editor.getText()));
       })
       .catch((error: unknown) => {
         console.error("[write.edit.load]", error);
@@ -503,15 +507,6 @@ function WritePageContent() {
       alignRight: ctx.editor?.isActive({ textAlign: "right" }) ?? false,
     }),
   });
-
-  const wordCount = useMemo(
-    () => {
-      if (!editor) return 0;
-      return editor.getText().trim().split(/\s+/).filter(Boolean).length;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [editor?.state],
-  );
 
   const readTime = Math.max(1, Math.ceil(wordCount / averageWordsPerMinute));
   const hasActiveUploads = isCoverUploading || inlineUploadCount > 0;
@@ -1538,6 +1533,10 @@ function validateImageFile(file: File) {
 
 function getFirstImageFile(files: FileList | null | undefined) {
   return Array.from(files ?? []).find((file) => file.type.startsWith("image/"));
+}
+
+function countWords(text: string) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
 function isTiptapDocument(value: unknown) {
