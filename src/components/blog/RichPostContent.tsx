@@ -11,25 +11,17 @@ type RichNode = {
 export function RichPostContent({
   contentJson,
   fallbackContent,
-  excerpt,
 }: {
   contentJson: unknown;
   fallbackContent: string;
-  excerpt?: string;
 }) {
   const doc = isRichNode(contentJson) ? contentJson : null;
   const nodes = doc?.content;
-  const hasBlockquote = Array.isArray(nodes)
-    ? nodes.some((node) => node.type === "blockquote")
-    : fallbackContent
-        .split(/\n{2,}/)
-        .some((block) => block.trim().startsWith("> "));
 
   if (Array.isArray(nodes) && nodes.length > 0) {
     return (
       <div className="break-words [overflow-wrap:anywhere]">
         {nodes.map((node, index) => renderNode(node, `node-${index}`))}
-        {excerpt && !hasBlockquote && <ExcerptQuote excerpt={excerpt} />}
       </div>
     );
   }
@@ -37,7 +29,6 @@ export function RichPostContent({
   return (
     <div className="break-words [overflow-wrap:anywhere]">
       {renderPlainContent(fallbackContent)}
-      {excerpt && !hasBlockquote && <ExcerptQuote excerpt={excerpt} />}
     </div>
   );
 }
@@ -83,26 +74,35 @@ function renderNode(node: RichNode, key: string): ReactNode {
       return (
         <blockquote
           key={key}
-          className="mt-8 rounded-[24px] border-l-4 border-rose-300 bg-gradient-to-r from-rose-50 to-rose-50/35 px-6 py-5 font-serif text-lg italic tracking-normal text-[#9a6570]"
+          className="my-5 border-l-[3px] border-rose-300 pl-5 font-serif italic text-[#7a6666] [&_p]:mb-0 [&_p]:text-inherit"
         >
           {children}
         </blockquote>
       );
     case "bulletList":
       return (
-        <ul key={key} className="list-disc space-y-2 pl-6 text-[#6a5555]">
+        <ul
+          key={key}
+          className="my-5 list-disc space-y-2 pl-7 text-[#6a5555]"
+        >
           {children}
         </ul>
       );
     case "orderedList":
       return (
-        <ol key={key} className="list-decimal space-y-2 pl-6 text-[#6a5555]">
+        <ol
+          key={key}
+          className="my-5 list-decimal space-y-2 pl-7 text-[#6a5555]"
+        >
           {children}
         </ol>
       );
     case "listItem":
       return (
-        <li key={key} className="break-words leading-8 [overflow-wrap:anywhere]">
+        <li
+          key={key}
+          className="break-words leading-8 [overflow-wrap:anywhere] [&_p]:mb-0 [&_p]:text-inherit"
+        >
           {children}
         </li>
       );
@@ -137,14 +137,6 @@ function renderImage(node: RichNode, key: string) {
         </figcaption>
       )}
     </figure>
-  );
-}
-
-function ExcerptQuote({ excerpt }: { excerpt: string }) {
-  return (
-    <blockquote className="mt-8 rounded-[24px] border-l-4 border-rose-300 bg-gradient-to-r from-rose-50 to-rose-50/35 px-6 py-5 font-serif text-lg italic tracking-normal text-[#9a6570]">
-      {excerpt}
-    </blockquote>
   );
 }
 
@@ -232,7 +224,7 @@ function renderPlainContent(content: string) {
         return (
           <blockquote
             key={index}
-            className="mt-8 rounded-[24px] border-l-4 border-rose-300 bg-gradient-to-r from-rose-50 to-rose-50/35 px-6 py-5 font-serif text-lg italic tracking-normal text-[#9a6570]"
+            className="my-5 border-l-[3px] border-rose-300 pl-5 font-serif italic text-[#7a6666]"
           >
             {trimmed.slice(2)}
           </blockquote>
