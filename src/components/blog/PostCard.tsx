@@ -11,6 +11,7 @@ interface PostCardProps {
   categoryLabel?: string;
   date: string;
   readTime: string;
+  thumbnailUrl?: string | null;
   horizontal?: boolean;
 }
 
@@ -62,6 +63,7 @@ const PostCard: React.FC<PostCardProps> = ({
   categoryLabel,
   date,
   readTime,
+  thumbnailUrl,
   horizontal = false,
 }) => {
   const currentStyle = styleMap[category];
@@ -86,14 +88,24 @@ const PostCard: React.FC<PostCardProps> = ({
               : "h-[180px] w-full",
           ].join(" ")}
         >
-          <span className="text-6xl drop-shadow-md transition-transform duration-500 group-hover:scale-110">
-            {currentStyle.emoji}
-          </span>
-          <span
-            className={`absolute bottom-3 right-4 text-2xl opacity-60 ${currentStyle.decorColor}`}
-          >
-            {currentStyle.decor}
-          </span>
+          {thumbnailUrl ? (
+            <img
+              src={thumbnailUrl}
+              alt=""
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : (
+            <>
+              <span className="text-6xl drop-shadow-md transition-transform duration-500 group-hover:scale-110">
+                {currentStyle.emoji}
+              </span>
+              <span
+                className={`absolute bottom-3 right-4 text-2xl opacity-60 ${currentStyle.decorColor}`}
+              >
+                {currentStyle.decor}
+              </span>
+            </>
+          )}
         </div>
 
         <div className="flex flex-1 flex-col p-6">

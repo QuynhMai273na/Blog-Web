@@ -141,7 +141,15 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
                   <div
                     className={`flex h-[110px] w-full flex-shrink-0 items-center justify-center rounded-[14px] border border-rose-200/65 text-[40px] shadow-sm transition-transform hover:scale-105 md:w-[160px] ${imgBg}`}
                   >
-                    <span>{getCategoryIcon(post.categorySlug)}</span>
+                    {post.thumbnailUrl ? (
+                      <img
+                        src={post.thumbnailUrl}
+                        alt=""
+                        className="h-full w-full rounded-[14px] object-cover"
+                      />
+                    ) : (
+                      <span>{getCategoryIcon(post.categorySlug)}</span>
+                    )}
                   </div>
 
                   <div className="flex flex-1 flex-col justify-center">

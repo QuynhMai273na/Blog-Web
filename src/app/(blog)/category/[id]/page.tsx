@@ -92,7 +92,15 @@ export default async function CategoryPage({
               >
                 <article className="mx-auto flex max-w-5xl flex-col gap-10 px-6 py-8 md:flex-row md:items-center">
                   <div className="flex h-[110px] w-full flex-shrink-0 items-center justify-center rounded-[14px] border border-rose-200/65 bg-[#fce8eb] text-4xl shadow-sm transition-transform hover:scale-105 md:w-[160px]">
-                    <span>{getCategoryIcon(post.categorySlug)}</span>
+                    {post.thumbnailUrl ? (
+                      <img
+                        src={post.thumbnailUrl}
+                        alt=""
+                        className="h-full w-full rounded-[14px] object-cover"
+                      />
+                    ) : (
+                      <span>{getCategoryIcon(post.categorySlug)}</span>
+                    )}
                   </div>
 
                   <div className="flex flex-1 flex-col justify-center">
