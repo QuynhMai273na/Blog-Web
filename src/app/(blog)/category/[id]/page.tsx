@@ -37,13 +37,13 @@ export default async function CategoryPage({
   );
   const categoryName =
     allPosts[0]?.categoryLabel ?? getFallbackCategoryName(id);
-  const categoryStyle = getBlogCategoryStyle(id);
+  const pageCategoryStyle = getBlogCategoryStyle(id);
 
   return (
     <div className="flex min-h-full w-full flex-col bg-white pb-4">
       <section
         className="relative min-h-[160px] w-full overflow-hidden border-b border-[#f1ddd8] bg-cover bg-center px-6 py-8 md:min-h-[200px] md:py-11"
-        style={{ backgroundImage: `url(${categoryStyle.heroImage})` }}
+        style={{ backgroundImage: `url(${pageCategoryStyle.heroImage})` }}
       >
         <div
           aria-hidden
@@ -96,7 +96,7 @@ export default async function CategoryPage({
         <>
           <section className="flex w-full flex-1 flex-col">
             {posts.map((post) => {
-              const categoryStyle = getBlogCategoryStyle(post.categorySlug);
+              const postCategoryStyle = getBlogCategoryStyle(post.categorySlug);
 
               return (
                 <Link
@@ -106,15 +106,23 @@ export default async function CategoryPage({
                 >
                   <article className="mx-auto flex max-w-5xl flex-col gap-10 px-6 py-8 md:flex-row md:items-center">
                     <div
-                      className={`flex h-[110px] w-full flex-shrink-0 items-center justify-center rounded-[14px] border border-rose-200/65 text-4xl shadow-sm transition-transform hover:scale-105 md:w-[160px] ${categoryStyle.imageClass}`}
+                      className={`flex h-[110px] w-full flex-shrink-0 items-center justify-center rounded-[14px] border border-rose-200/65 text-4xl shadow-sm transition-transform hover:scale-105 md:w-[160px] ${postCategoryStyle.imageClass}`}
                     >
-                      <span>{categoryStyle.icon}</span>
+                      {post.thumbnailUrl ? (
+                        <img
+                          src={post.thumbnailUrl}
+                          alt=""
+                          className="h-full w-full rounded-[14px] object-cover"
+                        />
+                      ) : (
+                        <span>{postCategoryStyle.icon}</span>
+                      )}
                     </div>
 
                     <div className="flex flex-1 flex-col justify-center">
                       <div className="mb-2">
                         <span
-                          className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${categoryStyle.tagClass}`}
+                          className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${postCategoryStyle.tagClass}`}
                         >
                           {post.categoryLabel}
                         </span>

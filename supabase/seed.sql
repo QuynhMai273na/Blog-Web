@@ -7,6 +7,81 @@ ALTER TABLE profiles
   ADD COLUMN IF NOT EXISTS app_role TEXT NOT NULL DEFAULT 'user'
   CHECK (app_role IN ('user', 'author', 'admin'));
 
+ALTER TABLE posts
+  ADD COLUMN IF NOT EXISTS content_json jsonb;
+
+CREATE OR REPLACE FUNCTION public.seed_tiptap_from_markdown(p_content text)
+RETURNS jsonb
+LANGUAGE plpgsql
+IMMUTABLE
+AS $$
+DECLARE
+  v_block text;
+  v_trimmed text;
+  v_nodes jsonb := '[]'::jsonb;
+  v_type text;
+  v_level int;
+  v_text text;
+BEGIN
+  FOREACH v_block IN ARRAY regexp_split_to_array(coalesce(p_content, ''), E'\n[ \t\r\n]*\n')
+  LOOP
+    v_trimmed := btrim(v_block);
+    IF v_trimmed = '' THEN
+      CONTINUE;
+    END IF;
+
+    IF v_trimmed LIKE '### %' THEN
+      v_type := 'heading';
+      v_level := 3;
+      v_text := btrim(substr(v_trimmed, 5));
+    ELSIF v_trimmed LIKE '## %' THEN
+      v_type := 'heading';
+      v_level := 2;
+      v_text := btrim(substr(v_trimmed, 4));
+    ELSIF v_trimmed LIKE '> %' THEN
+      v_type := 'blockquote';
+      v_level := NULL;
+      v_text := btrim(substr(v_trimmed, 3));
+    ELSE
+      v_type := 'paragraph';
+      v_level := NULL;
+      v_text := v_trimmed;
+    END IF;
+
+    IF v_type = 'heading' THEN
+      v_nodes := v_nodes || jsonb_build_array(
+        jsonb_build_object(
+          'type', 'heading',
+          'attrs', jsonb_build_object('level', v_level),
+          'content', jsonb_build_array(jsonb_build_object('type', 'text', 'text', v_text))
+        )
+      );
+    ELSIF v_type = 'blockquote' THEN
+      v_nodes := v_nodes || jsonb_build_array(
+        jsonb_build_object(
+          'type', 'blockquote',
+          'content', jsonb_build_array(
+            jsonb_build_object(
+              'type', 'paragraph',
+              'content', jsonb_build_array(jsonb_build_object('type', 'text', 'text', v_text))
+            )
+          )
+        )
+      );
+    ELSE
+      v_nodes := v_nodes || jsonb_build_array(
+        jsonb_build_object(
+          'type', 'paragraph',
+          'content', jsonb_build_array(jsonb_build_object('type', 'text', 'text', v_text))
+        )
+      );
+    END IF;
+  END LOOP;
+
+  RETURN jsonb_build_object('type', 'doc', 'content', v_nodes);
+END;
+$$;
+
 INSERT INTO categories (id, name, slug, description)
 VALUES
   ('11111111-1111-4111-8111-111111111111', 'Parenting', 'parenting', 'Nhung ghi chep ve lam me, cham soc con va giu ket noi trong gia dinh.'),
@@ -22,12 +97,25 @@ INSERT INTO posts (
   title,
   slug,
   content,
+  content_json,
   category_id,
   thumbnail_url,
   summary,
   status,
   published_at
 )
+SELECT
+  id,
+  title,
+  slug,
+  content,
+  public.seed_tiptap_from_markdown(content),
+  category_id,
+  thumbnail_url,
+  summary,
+  status,
+  published_at
+FROM (
 VALUES
   (
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
@@ -149,9 +237,21 @@ Sau moi lan vap, minh chi chon mot hanh dong nho trong ngay. Nho nhung lam duoc 
     'published',
     '2026-03-20 08:00:00+00'
   )
+) AS seed_posts (
+  id,
+  title,
+  slug,
+  content,
+  category_id,
+  thumbnail_url,
+  summary,
+  status,
+  published_at
+)
 ON CONFLICT (slug) DO UPDATE SET
   title = EXCLUDED.title,
   content = EXCLUDED.content,
+  content_json = EXCLUDED.content_json,
   category_id = EXCLUDED.category_id,
   thumbnail_url = EXCLUDED.thumbnail_url,
   summary = EXCLUDED.summary,

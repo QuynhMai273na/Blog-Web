@@ -2,6 +2,7 @@ import PostCard from "@/components/blog/PostCard";
 import { SubscribeForm } from "@/components/forms/SubscribeForm";
 import {
   BLOG_CATEGORY_SLUGS,
+  getBlogCategoryStyle,
   type BlogCategorySlug,
 } from "@/constants/categories";
 import Link from "next/link";
@@ -19,13 +20,6 @@ type HomePageProps = {
 
 function isBlogCategorySlug(value: string): value is BlogCategorySlug {
   return BLOG_CATEGORY_SLUGS.includes(value as BlogCategorySlug);
-}
-
-function getCategoryIcon(slug: string) {
-  if (slug === "yoga") return "🧘";
-  if (slug === "finance") return "💰";
-  if (slug === "parenting") return "👶";
-  return "🌻";
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
@@ -101,7 +95,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 : "border-rose-100 text-sage-800 hover:border-rose-200 hover:text-sage-800",
             ].join(" ")}
           >
-            <span aria-hidden>{getCategoryIcon(category.value)}</span>
+            <span aria-hidden>{getBlogCategoryStyle(category.value).icon}</span>
             {category.label}
           </Link>
         ))}
