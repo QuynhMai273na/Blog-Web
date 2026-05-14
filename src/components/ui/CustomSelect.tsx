@@ -52,7 +52,9 @@ export default function CustomSelect({
   }, []);
 
   const currentValue = value ?? selectedValue;
-  const selectedOption = options.find((option) => option.value === currentValue);
+  const selectedOption = options.find(
+    (option) => option.value === currentValue,
+  );
 
   function handleSelect(nextValue: string) {
     setSelectedValue(nextValue);
@@ -61,7 +63,7 @@ export default function CustomSelect({
   }
 
   return (
-    <div ref={rootRef} className={cn("relative", className)}>
+    <div ref={rootRef} className={cn("relative", open && "z-[80]", className)}>
       {name ? <input type="hidden" name={name} value={currentValue} /> : null}
 
       <button
@@ -91,7 +93,7 @@ export default function CustomSelect({
           role="listbox"
           aria-labelledby={buttonId}
           className={cn(
-            "absolute z-50 mt-2 w-full overflow-hidden rounded-[20px] border border-rose-100 bg-white shadow-[0_16px_40px_rgba(214,156,161,0.22)] ring-1 ring-rose-50",
+            "absolute left-0 top-full z-[80] mt-2 w-full overflow-hidden rounded-[20px] border border-rose-100 bg-white shadow-[0_16px_40px_rgba(214,156,161,0.22)] ring-1 ring-rose-50",
             panelClassName,
           )}
         >

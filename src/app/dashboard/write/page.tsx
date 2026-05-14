@@ -235,6 +235,7 @@ function SidebarSection({
   iconColor,
   open,
   onToggle,
+  className,
   children,
 }: {
   id: string;
@@ -243,10 +244,13 @@ function SidebarSection({
   iconColor: string;
   open: boolean;
   onToggle: (id: string) => void;
+  className?: string;
   children: ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-[26px] border border-white/90 bg-[#fffdfb]/95 shadow-[0_16px_50px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
+    <section
+      className={`relative rounded-[26px] border border-white/90 bg-[#fffdfb]/95 shadow-[0_16px_50px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md ${className ?? ""}`}
+    >
       <button
         type="button"
         onClick={() => onToggle(id)}
@@ -1362,6 +1366,7 @@ function WritePageContent() {
               iconColor="text-[#d5ab72]"
               open={sidebarOpen.category}
               onToggle={toggleSidebar}
+              className="z-30"
             >
               <label className="text-xs font-semibold uppercase tracking-[0.22em] text-[#a58f8f]">
                 Danh mục chính
