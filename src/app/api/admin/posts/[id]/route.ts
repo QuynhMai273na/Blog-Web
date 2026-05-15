@@ -26,6 +26,7 @@ type UpdatePostPayload = {
   options?: {
     comments?: boolean;
     featured?: boolean;
+    emailSubscribers?: boolean;
   };
 };
 

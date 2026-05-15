@@ -853,6 +853,8 @@ function WritePageContent() {
     const wasEditing = Boolean(editingPostId);
     setIsSaving(intent);
     const requestedMode = intent === "draft" ? "draft" : publishMode;
+    const shouldEmailSubscribers =
+      !editingPostId && requestedMode !== "draft" && toggles.emailSubscribers;
     const response = await fetch(
       editingPostId ? `/api/admin/posts/${editingPostId}` : "/api/admin/posts",
       {
@@ -870,7 +872,11 @@ function WritePageContent() {
           uploadedAssetIds: Array.from(sessionAssetIdsRef.current),
           publishMode: requestedMode,
           scheduledAt: requestedMode === "scheduled" ? scheduledAt : null,
-          options: toggles,
+          options: {
+            comments: toggles.comments,
+            featured: toggles.featured,
+            emailSubscribers: shouldEmailSubscribers,
+          },
         }),
       },
     );
@@ -878,6 +884,12 @@ function WritePageContent() {
     const result = (await response.json().catch(() => null)) as {
       error?: string;
       post?: { slug: string; status: string };
+      notification?: {
+        requested: boolean;
+        sent: number;
+        failed: number;
+        skippedReason?: string;
+      };
     } | null;
 
     setIsSaving(null);
@@ -904,6 +916,12 @@ function WritePageContent() {
           ? `/posts/${result.post.slug}`
           : "/dashboard",
     };
+    if (result.notification?.requested) {
+      successNotice.message = appendSubscriberNotificationMessage(
+        successNotice.message,
+        result.notification,
+      );
+    }
 
     resetEditorForm();
     setNotice(successNotice);
@@ -949,6 +967,11 @@ function WritePageContent() {
       </div>
     );
   }
+
+  const isSubscriberEmailEnabled = !editingPostId && publishMode !== "draft";
+  const visibleToggleMeta = toggleMeta.filter(
+    ({ key }) => key !== "emailSubscribers" || !editingPostId,
+  );
 
   return (
     <div className={` ${editorPageBackground}`}>
@@ -1499,26 +1522,40 @@ function WritePageContent() {
               onToggle={toggleSidebar}
             >
               <div className="space-y-2">
-                {toggleMeta.map(({ key, label, icon: Icon }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => handleToggle(key)}
-                    className="flex w-full items-center justify-between rounded-[16px] border border-rose-100 bg-white px-4 py-3 text-left hover:border-rose-200"
-                  >
-                    <span className="flex items-center gap-2.5 text-base text-[#6f5a5a]">
-                      <Icon className="h-4 w-4 text-[#aeb8c6]" />
-                      {label}
-                    </span>
-                    <span
-                      className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${toggles[key] ? "bg-sage-300" : "bg-rose-100"}`}
+                {visibleToggleMeta.map(({ key, label, icon: Icon }) => {
+                  const disabled =
+                    key === "emailSubscribers" && !isSubscriberEmailEnabled;
+                  const checked = toggles[key] && !disabled;
+
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        if (!disabled) handleToggle(key);
+                      }}
+                      disabled={disabled}
+                      title={
+                        disabled
+                          ? "Chỉ gửi email khi tạo bài mới với trạng thái Đăng ngay hoặc Lên lịch."
+                          : undefined
+                      }
+                      className={`flex w-full items-center justify-between rounded-[16px] border border-rose-100 bg-white px-4 py-3 text-left hover:border-rose-200 disabled:cursor-not-allowed disabled:opacity-55`}
                     >
+                      <span className="flex items-center gap-2.5 text-base text-[#6f5a5a]">
+                        <Icon className="h-4 w-4 text-[#aeb8c6]" />
+                        {label}
+                      </span>
                       <span
-                        className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${toggles[key] ? "translate-x-5" : "translate-x-1"}`}
-                      />
-                    </span>
-                  </button>
-                ))}
+                        className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${checked ? "bg-sage-300" : "bg-rose-100"}`}
+                      >
+                        <span
+                          className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${checked ? "translate-x-5" : "translate-x-1"}`}
+                        />
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </SidebarSection>
           </aside>
@@ -1590,11 +1627,11 @@ function WritePageContent() {
 
 function validateImageFile(file: File) {
   if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-    return "Vui long chon anh JPG, PNG hoac WEBP.";
+    return "Vui lòng chọn ảnh JPG, PNG hoặc WEBP.";
   }
 
   if (file.size > 8 * 1024 * 1024) {
-    return "Anh toi da 8MB.";
+    return "Ảnh không được quá 8MB.";
   }
 
   return null;
@@ -1647,6 +1684,35 @@ function hasUnresolvedEditorImages(doc: unknown) {
 
   visit(doc);
   return hasUnresolved;
+}
+
+function appendSubscriberNotificationMessage(
+  baseMessage: string,
+  notification: {
+    requested: boolean;
+    sent: number;
+    failed: number;
+    skippedReason?: string;
+  },
+) {
+  if (notification.sent > 0 && notification.failed === 0) {
+    return `${baseMessage} Đã gửi email cho ${notification.sent} subscriber.`;
+  }
+
+  if (notification.sent > 0) {
+    return `${baseMessage} Đã gửi email cho ${notification.sent} subscriber, ${notification.failed} email bị lỗi.`;
+  }
+
+  if (
+    notification.skippedReason ===
+    "Email will be sent when the scheduled post is published."
+  ) {
+    return `${baseMessage} Email thông báo sẽ được gửi đến subscriber khi bài viết được publish.`;
+  }
+
+  return `${baseMessage} Chưa gửi được email cho subscriber${
+    notification.skippedReason ? `: ${notification.skippedReason}` : "."
+  }`;
 }
 
 function validatePost({

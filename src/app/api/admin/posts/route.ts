@@ -6,6 +6,10 @@ import {
   hasUnresolvedImageSources,
   syncPostAssetsForPost,
 } from "@/services/post-assets.service";
+import {
+  sendNewPostNotification,
+  type SubscriberNotificationResult,
+} from "@/services/subscriber-notification.service";
 
 type PublishMode = "draft" | "scheduled" | "published";
 
@@ -24,6 +28,7 @@ type CreatePostPayload = {
   options?: {
     comments?: boolean;
     featured?: boolean;
+    emailSubscribers?: boolean;
   };
 };
 
@@ -91,6 +96,8 @@ export async function POST(request: Request) {
   const allowComments = payload.options?.comments ?? true;
   const isFeatured = payload.options?.featured ?? false;
   const featuredAt = isFeatured ? new Date().toISOString() : null;
+  const shouldNotifySubscribers =
+    payload.options?.emailSubscribers === true && status !== "draft";
 
   const { data: post, error: insertError } = await supabase
     .from("posts")
@@ -106,6 +113,9 @@ export async function POST(request: Request) {
       allow_comments: allowComments,
       is_featured: isFeatured,
       featured_at: featuredAt,
+      notify_subscribers_on_publish: shouldNotifySubscribers,
+      subscriber_notified_at: null,
+      subscriber_notification_error: null,
       status,
       published_at:
         status === "published"
@@ -146,7 +156,92 @@ export async function POST(request: Request) {
   revalidatePath("/dashboard");
   revalidatePath(`/category/${categorySlug}`);
 
-  return NextResponse.json({ post });
+  const notification = await maybeNotifySubscribers({
+    request,
+    supabase,
+    postId: post.id,
+    requested: shouldNotifySubscribers,
+    postStatus: post.status,
+    slug: post.slug,
+    title: payload.title!.trim(),
+    excerpt: payload.excerpt!.trim(),
+  });
+
+  return NextResponse.json({ post, notification });
+}
+
+async function maybeNotifySubscribers({
+  request,
+  supabase,
+  postId,
+  requested,
+  postStatus,
+  slug,
+  title,
+  excerpt,
+}: {
+  request: Request;
+  supabase: ReturnType<typeof createClient>;
+  postId: string;
+  requested: boolean;
+  postStatus: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+}): Promise<SubscriberNotificationResult | undefined> {
+  if (!requested) return undefined;
+
+  if (postStatus !== "published") {
+    return {
+      requested: true,
+      sent: 0,
+      failed: 0,
+      skippedReason: "Email will be sent when the scheduled post is published.",
+    };
+  }
+
+  const result = await sendNewPostNotification({
+    title,
+    excerpt,
+    url: new URL(`/posts/${slug}`, request.url).toString(),
+  });
+
+  await updateSubscriberNotificationState({
+    supabase,
+    postId,
+    result,
+  });
+
+  return result;
+}
+
+async function updateSubscriberNotificationState({
+  supabase,
+  postId,
+  result,
+}: {
+  supabase: ReturnType<typeof createClient>;
+  postId: string;
+  result: SubscriberNotificationResult;
+}) {
+  const shouldMarkComplete =
+    result.sent > 0 ||
+    (!result.skippedReason && result.failed === 0) ||
+    result.skippedReason === "No subscribers found.";
+
+  const { error } = await supabase
+    .from("posts")
+    .update({
+      subscriber_notified_at: shouldMarkComplete ? new Date().toISOString() : null,
+      subscriber_notification_error: shouldMarkComplete
+        ? null
+        : (result.skippedReason ?? `Failed to send ${result.failed} emails.`),
+    })
+    .eq("id", postId);
+
+  if (error) {
+    console.error("[admin.posts.notify.mark]", error);
+  }
 }
 
 function normalizeTags(tags: unknown) {

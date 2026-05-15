@@ -75,7 +75,7 @@ export async function getPublishedPosts(options?: {
   let query = supabase
     .from("posts")
     .select(selectClause)
-    .in("status", ["published", "scheduled"])
+    .eq("status", "published")
     .lte("published_at", new Date().toISOString());
 
   if (shouldPrioritizeFeatured) {
@@ -131,7 +131,7 @@ export async function getPostBySlug(slug: string) {
       "id,title,slug,summary,content,content_json,thumbnail_url,published_at,created_at,tags,allow_comments,is_featured,featured_at,categories(name,slug)",
     )
     .eq("slug", slug)
-    .in("status", ["published", "scheduled"])
+    .eq("status", "published")
     .lte("published_at", new Date().toISOString())
     .maybeSingle();
 
@@ -169,7 +169,6 @@ export async function getAdminPosts(options?: {
   offset?: number;
 }) {
   const supabase = createClient();
-  await publishDueScheduledPosts(supabase);
 
   let query = supabase
     .from("posts")
@@ -192,20 +191,6 @@ export async function getAdminPosts(options?: {
   }
 
   return attachCommentCounts((data ?? []) as PostRow[]);
-}
-
-async function publishDueScheduledPosts(
-  supabase: ReturnType<typeof createClient>,
-) {
-  const { error } = await supabase
-    .from("posts")
-    .update({ status: "published" })
-    .eq("status", "scheduled")
-    .lte("published_at", new Date().toISOString());
-
-  if (error) {
-    console.error("[posts.publishDueScheduled]", error);
-  }
 }
 
 async function attachCommentCounts(rows: PostRow[]) {
@@ -237,7 +222,7 @@ function toPostSummary(post: PostRow, commentCount: number): BlogPostSummary {
   const category = getSingleCategory(post.categories);
   const categorySlug = category?.slug ?? "life";
   const content = post.content ?? "";
-  const effectiveStatus = getEffectiveStatus(post.status, post.published_at);
+  const effectiveStatus = getEffectiveStatus(post.status);
 
   return {
     id: post.id,
@@ -310,17 +295,7 @@ function formatDateTime(value: string | null) {
   }).format(new Date(value));
 }
 
-function getEffectiveStatus(
-  status: string | null | undefined,
-  publishedAt: string | null,
-): PostStatus {
-  if (
-    status === "scheduled" &&
-    publishedAt &&
-    new Date(publishedAt).getTime() <= Date.now()
-  ) {
-    return "published";
-  }
+function getEffectiveStatus(status: string | null | undefined): PostStatus {
   if (status === "scheduled") return "scheduled";
   if (status === "published") return "published";
   return "draft";

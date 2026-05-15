@@ -34,7 +34,10 @@ CREATE TABLE posts (
   tags text[] NOT NULL DEFAULT '{}',
   allow_comments boolean NOT NULL DEFAULT true,
   is_featured boolean NOT NULL DEFAULT false,
-  featured_at timestamptz
+  featured_at timestamptz,
+  notify_subscribers_on_publish boolean NOT NULL DEFAULT false,
+  subscriber_notified_at timestamptz,
+  subscriber_notification_error text
 );
 
 CREATE TABLE comments (
@@ -90,6 +93,8 @@ CREATE POLICY "public read posts"
   USING (true);
 
 CREATE INDEX posts_featured_order_idx ON posts (is_featured DESC, featured_at DESC, published_at DESC);
+CREATE INDEX posts_scheduled_notification_idx
+  ON posts (status, published_at, notify_subscribers_on_publish, subscriber_notified_at);
 
 CREATE POLICY "read all comments"
   ON comments FOR SELECT
