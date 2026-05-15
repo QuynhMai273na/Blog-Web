@@ -96,6 +96,18 @@ const toggleMeta: Array<{
 ];
 
 const averageWordsPerMinute = 220;
+const defaultToggles: Record<ToggleKey, boolean> = {
+  comments: true,
+  featured: false,
+  emailSubscribers: false,
+  showHomepage: true,
+};
+const defaultSidebarOpen: Record<string, boolean> = {
+  publish: true,
+  cover: false,
+  category: false,
+  options: false,
+};
 const editorPageBackground =
   // "bg-[radial-gradient(circle_at_top_left,rgba(252,228,230,0.78),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(209,231,221,0.56),transparent_32%),linear-gradient(180deg,#fdfbf6_0%,#f8f1e7_50%,#fcfaf6_100%)]";
   "bg-[radial-gradient(circle_at_top_left,rgba(252,228,230,0.78),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(209,231,221,0.56),transparent_32%),radial-gradient(circle_at_12%_88%,rgba(252,228,230,0.6),transparent_34%),radial-gradient(circle_at_88%_88%,rgba(209,231,221,0.55),transparent_34%),linear-gradient(180deg,#fdfbf6_0%,#f8f1e7_50%,#fcfaf6_100%)]";
@@ -138,9 +150,7 @@ const EditorImage = TiptapImage.extend({
         default: null,
         parseHTML: (element) => element.getAttribute("data-upload-temp-id"),
         renderHTML: (attributes) =>
-          attributes.tempId
-            ? { "data-upload-temp-id": attributes.tempId }
-            : {},
+          attributes.tempId ? { "data-upload-temp-id": attributes.tempId } : {},
       },
     };
   },
@@ -178,6 +188,7 @@ function ToolbarBtn({
 
 function ActionButtons({
   disabled,
+  isEditing,
   isSaving,
   onDraft,
   onCancel,
@@ -185,6 +196,7 @@ function ActionButtons({
   onPublish,
 }: {
   disabled: boolean;
+  isEditing: boolean;
   isSaving: SaveIntent | null;
   onDraft: () => void;
   onCancel: () => void;
@@ -192,28 +204,30 @@ function ActionButtons({
   onPublish: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
       <button
         type="button"
         onClick={onCancel}
         disabled={isSaving !== null}
-        className="rounded-full border border-rose-100 bg-white px-4 py-2 text-sm font-medium text-[#9a6570] transition-all duration-200 hover:border-rose-200 hover:bg-rose-50"
+        className="flex-1 rounded-full border border-rose-100 bg-white px-4 py-2 text-sm font-medium text-[#9a6570] transition-all duration-200 hover:border-rose-200 hover:bg-rose-50 sm:flex-none"
       >
         Hủy
       </button>
-      <button
-        type="button"
-        onClick={onDraft}
-        disabled={disabled || isSaving !== null}
-        className="rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-[#8a6b6b] transition-all duration-200 hover:border-rose-300 hover:bg-rose-50"
-      >
-        {isSaving === "draft" ? "Đang lưu..." : "Lưu nháp"}
-      </button>
+      {!isEditing && (
+        <button
+          type="button"
+          onClick={onDraft}
+          disabled={disabled || isSaving !== null}
+          className="flex-1 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-[#8a6b6b] transition-all duration-200 hover:border-rose-300 hover:bg-rose-50 sm:flex-none"
+        >
+          {isSaving === "draft" ? "Đang lưu..." : "Lưu nháp"}
+        </button>
+      )}
       <button
         type="button"
         onClick={onPreview}
         disabled={disabled}
-        className="rounded-full border border-sage-100 bg-sage-50 px-4 py-2 text-sm font-medium text-[#64806f] transition-all duration-200 hover:border-sage-300 hover:bg-white"
+        className="flex-1 rounded-full border border-sage-100 bg-sage-50 px-4 py-2 text-sm font-medium text-[#64806f] transition-all duration-200 hover:border-sage-300 hover:bg-white sm:flex-none"
       >
         Xem trước
       </button>
@@ -221,9 +235,13 @@ function ActionButtons({
         type="button"
         onClick={onPublish}
         disabled={disabled || isSaving !== null}
-        className="rounded-full bg-sage-300 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(168,198,159,0.32)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-sage-800"
+        className="flex-1 rounded-full bg-sage-300 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(168,198,159,0.32)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-sage-800 sm:flex-none"
       >
-        {isSaving === "publish" ? "Đang lưu..." : "Đăng bài"}
+        {isSaving === "publish"
+          ? "Đang lưu..."
+          : isEditing
+            ? "Lưu lại"
+            : "Đăng bài"}
       </button>
     </div>
   );
@@ -236,6 +254,7 @@ function SidebarSection({
   iconColor,
   open,
   onToggle,
+  className,
   children,
 }: {
   id: string;
@@ -244,10 +263,13 @@ function SidebarSection({
   iconColor: string;
   open: boolean;
   onToggle: (id: string) => void;
+  className?: string;
   children: ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-[26px] border border-white/90 bg-[#fffdfb]/95 shadow-[0_16px_50px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
+    <section
+      className={`relative rounded-[26px] border border-white/90 bg-[#fffdfb]/95 shadow-[0_16px_50px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md ${className ?? ""}`}
+    >
       <button
         type="button"
         onClick={() => onToggle(id)}
@@ -265,11 +287,17 @@ function SidebarSection({
           ▾
         </span>
       </button>
-      {open && (
-        <div className="border-t border-rose-100/60 px-5 pb-5 pt-4">
-          {children}
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[var(--ease-out-soft)] ${
+          open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="border-t border-rose-100/60 px-5 pb-5 pt-4">
+            {children}
+          </div>
         </div>
-      )}
+      </div>
     </section>
   );
 }
@@ -331,18 +359,10 @@ function WritePageContent() {
   const [isSaving, setIsSaving] = useState<SaveIntent | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
-  const [toggles, setToggles] = useState<Record<ToggleKey, boolean>>({
-    comments: true,
-    featured: false,
-    emailSubscribers: false,
-    showHomepage: true,
-  });
-  const [sidebarOpen, setSidebarOpen] = useState<Record<string, boolean>>({
-    publish: true,
-    cover: false,
-    category: false,
-    options: false,
-  });
+  const [toggles, setToggles] =
+    useState<Record<ToggleKey, boolean>>(defaultToggles);
+  const [sidebarOpen, setSidebarOpen] =
+    useState<Record<string, boolean>>(defaultSidebarOpen);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -431,6 +451,8 @@ function WritePageContent() {
             content_json?: unknown;
             thumbnail_url: string | null;
             tags?: string[] | null;
+            allow_comments?: boolean | null;
+            is_featured?: boolean | null;
             assets?: PostAssetRow[];
             status: PublishMode;
             published_at: string | null;
@@ -462,12 +484,16 @@ function WritePageContent() {
         setPublishMode(post.status ?? "draft");
         setScheduledAt(toDatetimeLocalValue(post.published_at));
         setTags(post.tags ?? []);
+        setToggles((current) => ({
+          ...current,
+          comments: post.allow_comments ?? true,
+          featured: post.is_featured ?? false,
+        }));
         setCoverImage(post.thumbnail_url ?? null);
         setCoverPublicUrl(post.thumbnail_url ?? null);
         const coverAsset = (post.assets ?? []).find(
           (asset) =>
-            asset.kind === "cover" &&
-            asset.public_url === post.thumbnail_url,
+            asset.kind === "cover" && asset.public_url === post.thumbnail_url,
         );
         setCoverAssetId(coverAsset?.id ?? null);
         setCoverAssetStatus(coverAsset ? "attached" : null);
@@ -530,9 +556,9 @@ function WritePageContent() {
       body: formData,
     });
 
-    const result = (await response.json().catch(() => null)) as
-      | UploadResponse
-      | null;
+    const result = (await response
+      .json()
+      .catch(() => null)) as UploadResponse | null;
 
     if (!response.ok || !result?.assetId || !result.url) {
       throw new Error(result?.error ?? "Khong the tai anh.");
@@ -563,6 +589,47 @@ function WritePageContent() {
   async function handleCancel() {
     await cleanupPendingAssets();
     router.push("/dashboard");
+  }
+
+  function resetEditorForm() {
+    if (coverObjectUrlRef.current) {
+      URL.revokeObjectURL(coverObjectUrlRef.current);
+      coverObjectUrlRef.current = null;
+    }
+
+    sessionAssetIdsRef.current.clear();
+    setEditingPostId(null);
+    setTitle("");
+    setExcerpt("");
+    setPublishMode("draft");
+    setScheduledAt("");
+    setCoverImage(null);
+    setCoverPublicUrl(null);
+    setCoverAssetId(null);
+    setCoverAssetStatus(null);
+    setCoverStoragePath("");
+    setCoverFileName("");
+    setIsCoverUploading(false);
+    setInlineUploadCount(0);
+    setIsDragging(false);
+    setWordCount(0);
+    setCategory(categoryOptions[0].value);
+    setTagInput("");
+    setTags([]);
+    setToggles(defaultToggles);
+    setSidebarOpen(defaultSidebarOpen);
+    editor?.commands.clearContent();
+  }
+
+  function scrollToActionBar() {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: "smooth",
+        });
+      });
+    });
   }
 
   async function handleFile(file: File | null) {
@@ -692,8 +759,7 @@ function WritePageContent() {
       removeEditorImage(tempId);
       setNotice({
         tone: "error",
-        message:
-          error instanceof Error ? error.message : "Khong the tai anh.",
+        message: error instanceof Error ? error.message : "Khong the tai anh.",
       });
     } finally {
       URL.revokeObjectURL(previewUrl);
@@ -790,8 +856,11 @@ function WritePageContent() {
       return;
     }
 
+    const wasEditing = Boolean(editingPostId);
     setIsSaving(intent);
     const requestedMode = intent === "draft" ? "draft" : publishMode;
+    const shouldEmailSubscribers =
+      !editingPostId && requestedMode !== "draft" && toggles.emailSubscribers;
     const response = await fetch(
       editingPostId ? `/api/admin/posts/${editingPostId}` : "/api/admin/posts",
       {
@@ -809,7 +878,11 @@ function WritePageContent() {
           uploadedAssetIds: Array.from(sessionAssetIdsRef.current),
           publishMode: requestedMode,
           scheduledAt: requestedMode === "scheduled" ? scheduledAt : null,
-          options: toggles,
+          options: {
+            comments: toggles.comments,
+            featured: toggles.featured,
+            emailSubscribers: shouldEmailSubscribers,
+          },
         }),
       },
     );
@@ -817,6 +890,12 @@ function WritePageContent() {
     const result = (await response.json().catch(() => null)) as {
       error?: string;
       post?: { slug: string; status: string };
+      notification?: {
+        requested: boolean;
+        sent: number;
+        failed: number;
+        skippedReason?: string;
+      };
     } | null;
 
     setIsSaving(null);
@@ -829,12 +908,9 @@ function WritePageContent() {
       return;
     }
 
-    sessionAssetIdsRef.current.clear();
-    setCoverAssetStatus(coverAssetId ? "attached" : null);
-
-    setNotice({
+    const successNotice: NoticeState = {
       tone: "success",
-      message: editingPostId
+      message: wasEditing
         ? "Bài viết đã được cập nhật."
         : result.post.status === "published"
           ? "Bài viết đã được đăng."
@@ -845,11 +921,26 @@ function WritePageContent() {
         result.post.status === "published"
           ? `/posts/${result.post.slug}`
           : "/dashboard",
-    });
+    };
+    if (result.notification?.requested) {
+      successNotice.message = appendSubscriberNotificationMessage(
+        successNotice.message,
+        result.notification,
+      );
+    }
+
+    resetEditorForm();
+    setNotice(successNotice);
 
     if (result.post.status === "published") {
       router.refresh();
     }
+
+    if (wasEditing) {
+      window.history.replaceState(null, "", "/dashboard/write");
+    }
+
+    scrollToActionBar();
   }
 
   if (authState === "loading") {
@@ -883,26 +974,33 @@ function WritePageContent() {
     );
   }
 
+  const isSubscriberEmailEnabled = !editingPostId && publishMode !== "draft";
+  const visibleToggleMeta = toggleMeta.filter(
+    ({ key }) => key !== "emailSubscribers" || !editingPostId,
+  );
+
   return (
     <div className={` ${editorPageBackground}`}>
       {/* ── page header ── */}
-      <header className="relative flex items-start justify-between bg-white/80 px-6 py-8 shadow-[0_24px_70px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
+      <header className="relative grid gap-4 bg-white/80 px-4 py-6 shadow-[0_24px_70px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md md:px-6 lg:grid-cols-[1fr_minmax(0,2fr)_1fr] lg:items-start lg:py-8">
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[0.32em] text-sage-300">
             Dashboard / Editor
           </p>
         </div>
 
-        <div className="absolute left-1/2 top-6 w-full max-w-2xl -translate-x-1/2 text-center px-4">
-          <h1 className="mt-3 font-serif text-3xl font-normal leading-[1.4] tracking-normal text-text_black md:text-[40px]">
+        <div className="w-full max-w-2xl text-left lg:mx-auto lg:text-center">
+          <h1 className="font-serif text-3xl font-normal leading-[1.4] tracking-normal text-text_black md:text-[40px]">
             {editingPostId ? "Sửa bài viết" : "Viết bài mới"}
           </h1>
           <p className="mt-2 text-base text-[#7f6d6d]">
-            Soạn nội dung, lưu nháp, xem trước, đăng ngay hoặc lên lịch.
+            {editingPostId
+              ? "Cập nhật nội dung, xem trước và lưu lại thay đổi."
+              : "Soạn nội dung, lưu nháp, xem trước, đăng ngay hoặc lên lịch."}
           </p>
         </div>
 
-        <div className="rounded-[24px] border border-sage-100 bg-sage-50/80 px-5 py-4 shadow-sm">
+        <div className="rounded-[24px] border border-sage-100 bg-sage-50/80 px-5 py-4 shadow-sm lg:justify-self-end">
           <p className="font-medium text-base text-[#64806f]">
             Chỉnh sửa lần cuối
           </p>
@@ -919,12 +1017,12 @@ function WritePageContent() {
       </header>
 
       {/* ── Main scrollable area ── */}
-      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-6">
+      <div className="mx-auto max-w-[1440px] px-3 py-4 sm:px-4 md:px-6 md:py-6">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
           {/* ── Left: writing area ── */}
-          <div className="space-y-5 pr-2">
+          <div className="min-w-0 space-y-5 xl:pr-2">
             {/* Toolbar */}
-            <div className="sticky top-0 z-30 rounded-[26px] border border-white/90 bg-white/95 px-4 py-3 shadow-[0_8px_30px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
+            <div className="sticky top-0 z-30 rounded-[22px] border border-white/90 bg-white/95 px-3 py-3 shadow-[0_8px_30px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md md:rounded-[26px] md:px-4">
               <input
                 ref={inlineFileInputRef}
                 type="file"
@@ -935,7 +1033,7 @@ function WritePageContent() {
                   event.target.value = "";
                 }}
               />
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0">
                 <ToolbarBtn
                   label="H2"
                   icon={Heading2}
@@ -1039,9 +1137,9 @@ function WritePageContent() {
             </div>
 
             {/* Card chính — Title + Excerpt + Editor */}
-            <div className="overflow-hidden rounded-[34px] border border-white/90 bg-[#fffefd]/95 shadow-[0_24px_70px_rgba(45,62,47,0.1)] ring-1 ring-rose-100/70 backdrop-blur-md">
+            <div className="overflow-hidden rounded-[24px] border border-white/90 bg-[#fffefd]/95 shadow-[0_24px_70px_rgba(45,62,47,0.1)] ring-1 ring-rose-100/70 backdrop-blur-md md:rounded-[34px]">
               {/* Title */}
-              <div className="px-7 pt-7 md:px-10 md:pt-10">
+              <div className="px-5 pt-6 md:px-10 md:pt-10">
                 <label
                   htmlFor="title"
                   className="text-base font-semibold uppercase tracking-[0.2em] text-text_secondary"
@@ -1058,10 +1156,10 @@ function WritePageContent() {
                 />
               </div>
 
-              <div className="mx-7 my-6 h-px bg-gradient-to-r from-rose-100 via-rose-200/60 to-transparent md:mx-10" />
+              <div className="mx-5 my-5 h-px bg-gradient-to-r from-rose-100 via-rose-200/60 to-transparent md:mx-10 md:my-6" />
 
               {/* Excerpt */}
-              <div className="px-7 md:px-10">
+              <div className="px-5 md:px-10">
                 <label
                   htmlFor="excerpt"
                   className="text-base font-semibold uppercase tracking-[0.2em] text-text_secondary"
@@ -1077,11 +1175,11 @@ function WritePageContent() {
                 />
               </div>
 
-              <div className="mx-7 my-6 h-px bg-gradient-to-r from-rose-100 via-rose-200/60 to-transparent md:mx-10" />
+              <div className="mx-5 my-5 h-px bg-gradient-to-r from-rose-100 via-rose-200/60 to-transparent md:mx-10 md:my-6" />
 
               {/* Tiptap editor */}
               <div className="bg-[#fdfcfb] border-t border-rose-100/60">
-                <div className="flex items-center justify-between px-7 py-4 md:px-10">
+                <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-10">
                   <div>
                     <p className="text-base font-semibold uppercase tracking-[0.2em] text-text_secondary">
                       Nội dung chính
@@ -1096,16 +1194,17 @@ function WritePageContent() {
                       : `${wordCount} từ · ~${readTime} phút`}
                   </div>
                 </div>
-                <div className="px-7 pb-7 md:px-10 md:pb-10">
+                <div className="px-4 pb-5 md:px-10 md:pb-10">
                   <div
-                    className="max-h-[640px] min-h-[520px] cursor-text overflow-y-auto overscroll-contain rounded-[20px] border border-rose-100 bg-white px-6 py-5 shadow-[inset_0_2px_8px_rgba(180,140,140,0.06),0_2px_12px_rgba(180,140,140,0.08)] transition-shadow duration-200 hover:shadow-[inset_0_2px_8px_rgba(180,140,140,0.08),0_6px_20px_rgba(180,140,140,0.14)] focus-within:border-rose-200 focus-within:shadow-[inset_0_2px_8px_rgba(180,140,140,0.08),0_6px_24px_rgba(214,156,161,0.18)]"
+                    className="max-h-[640px] min-h-[360px] cursor-text overflow-y-auto overscroll-contain rounded-[20px] border border-rose-100 bg-white px-4 py-4 shadow-[inset_0_2px_8px_rgba(180,140,140,0.06),0_2px_12px_rgba(180,140,140,0.08)] transition-shadow duration-200 hover:shadow-[inset_0_2px_8px_rgba(180,140,140,0.08),0_6px_20px_rgba(180,140,140,0.14)] focus-within:border-rose-200 focus-within:shadow-[inset_0_2px_8px_rgba(180,140,140,0.08),0_6px_24px_rgba(214,156,161,0.18)] md:min-h-[520px] md:px-6 md:py-5"
                     onClick={() => editor?.commands.focus()}
                   >
                     <EditorContent
                       editor={editor}
                       className="
                         [&_.ProseMirror]:outline-none
-                        [&_.ProseMirror]:min-h-[480px]
+                        [&_.ProseMirror]:min-h-[320px]
+                        md:[&_.ProseMirror]:min-h-[480px]
                         [&_.ProseMirror]:text-[#3a312f]
                         [&_.ProseMirror]:leading-[2]
                         [&_.ProseMirror]:break-words
@@ -1164,7 +1263,7 @@ function WritePageContent() {
             </div>
 
             {/* Bottom action bar */}
-            <div className="flex items-center justify-between rounded-[28px] border border-white/80 bg-white/80 px-5 py-4 shadow-[0_12px_36px_rgba(45,62,47,0.06)] backdrop-blur-md">
+            <div className="flex flex-col gap-4 rounded-[24px] border border-white/80 bg-white/80 px-4 py-4 shadow-[0_12px_36px_rgba(45,62,47,0.06)] backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:px-5 md:rounded-[28px]">
               <div className="min-w-0">
                 {notice ? (
                   <p
@@ -1190,6 +1289,7 @@ function WritePageContent() {
               </div>
               <ActionButtons
                 disabled={!editor || hasActiveUploads}
+                isEditing={Boolean(editingPostId)}
                 isSaving={isSaving}
                 onDraft={() => void handleSubmit("draft")}
                 onCancel={() => void handleCancel()}
@@ -1200,7 +1300,7 @@ function WritePageContent() {
           </div>
 
           {/* ── Right sidebar ── */}
-          <aside className="space-y-3">
+          <aside className="space-y-3 xl:sticky xl:top-4 xl:self-start">
             <SidebarSection
               id="publish"
               icon={CalendarDays}
@@ -1340,7 +1440,7 @@ function WritePageContent() {
                     disabled={isCoverUploading}
                     className="flex-1 rounded-[14px] border border-sage-100 bg-sage-50 px-3 py-2 text-xs font-medium text-[#64806f] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Doi anh
+                    Đổi
                   </button>
                   <button
                     type="button"
@@ -1348,7 +1448,7 @@ function WritePageContent() {
                     disabled={isCoverUploading}
                     className="flex-1 rounded-[14px] border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-medium text-[#be123c] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Xoa anh
+                    Xóa
                   </button>
                 </div>
               )}
@@ -1361,6 +1461,7 @@ function WritePageContent() {
               iconColor="text-[#d5ab72]"
               open={sidebarOpen.category}
               onToggle={toggleSidebar}
+              className="z-30"
             >
               <label className="text-xs font-semibold uppercase tracking-[0.22em] text-[#a58f8f]">
                 Danh mục chính
@@ -1428,26 +1529,40 @@ function WritePageContent() {
               onToggle={toggleSidebar}
             >
               <div className="space-y-2">
-                {toggleMeta.map(({ key, label, icon: Icon }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => handleToggle(key)}
-                    className="flex w-full items-center justify-between rounded-[16px] border border-rose-100 bg-white px-4 py-3 text-left hover:border-rose-200"
-                  >
-                    <span className="flex items-center gap-2.5 text-base text-[#6f5a5a]">
-                      <Icon className="h-4 w-4 text-[#aeb8c6]" />
-                      {label}
-                    </span>
-                    <span
-                      className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${toggles[key] ? "bg-sage-300" : "bg-rose-100"}`}
+                {visibleToggleMeta.map(({ key, label, icon: Icon }) => {
+                  const disabled =
+                    key === "emailSubscribers" && !isSubscriberEmailEnabled;
+                  const checked = toggles[key] && !disabled;
+
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        if (!disabled) handleToggle(key);
+                      }}
+                      disabled={disabled}
+                      title={
+                        disabled
+                          ? "Chỉ gửi email khi tạo bài mới với trạng thái Đăng ngay hoặc Lên lịch."
+                          : undefined
+                      }
+                      className={`flex w-full items-center justify-between rounded-[16px] border border-rose-100 bg-white px-4 py-3 text-left hover:border-rose-200 disabled:cursor-not-allowed disabled:opacity-55`}
                     >
+                      <span className="flex items-center gap-2.5 text-base text-[#6f5a5a]">
+                        <Icon className="h-4 w-4 text-[#aeb8c6]" />
+                        {label}
+                      </span>
                       <span
-                        className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${toggles[key] ? "translate-x-5" : "translate-x-1"}`}
-                      />
-                    </span>
-                  </button>
-                ))}
+                        className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${checked ? "bg-sage-300" : "bg-rose-100"}`}
+                      >
+                        <span
+                          className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${checked ? "translate-x-5" : "translate-x-1"}`}
+                        />
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </SidebarSection>
           </aside>
@@ -1502,9 +1617,7 @@ function WritePageContent() {
                     className="mb-8 aspect-video w-full rounded-[28px] object-cover shadow-[0_20px_60px_rgba(45,62,47,0.14)]"
                   />
                 )}
-                <article
-                  className="max-w-none overflow-hidden rounded-[28px] border border-white/90 bg-[#fffefd]/95 p-7 text-[#3a312f] shadow-[0_24px_70px_rgba(45,62,47,0.1)] md:p-10"
-                >
+                <article className="max-w-none overflow-hidden rounded-[28px] border border-white/90 bg-[#fffefd]/95 p-7 text-[#3a312f] shadow-[0_24px_70px_rgba(45,62,47,0.1)] md:p-10">
                   <RichPostContent
                     contentJson={editor?.getJSON() ?? null}
                     fallbackContent={toPlainPostContent(editor?.getJSON())}
@@ -1521,11 +1634,11 @@ function WritePageContent() {
 
 function validateImageFile(file: File) {
   if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-    return "Vui long chon anh JPG, PNG hoac WEBP.";
+    return "Vui lòng chọn ảnh JPG, PNG hoặc WEBP.";
   }
 
   if (file.size > 8 * 1024 * 1024) {
-    return "Anh toi da 8MB.";
+    return "Ảnh không được quá 8MB.";
   }
 
   return null;
@@ -1542,8 +1655,8 @@ function countWords(text: string) {
 function isTiptapDocument(value: unknown) {
   return Boolean(
     value &&
-      typeof value === "object" &&
-      (value as { type?: unknown }).type === "doc",
+    typeof value === "object" &&
+    (value as { type?: unknown }).type === "doc",
   );
 }
 
@@ -1578,6 +1691,35 @@ function hasUnresolvedEditorImages(doc: unknown) {
 
   visit(doc);
   return hasUnresolved;
+}
+
+function appendSubscriberNotificationMessage(
+  baseMessage: string,
+  notification: {
+    requested: boolean;
+    sent: number;
+    failed: number;
+    skippedReason?: string;
+  },
+) {
+  if (notification.sent > 0 && notification.failed === 0) {
+    return `${baseMessage} Đã gửi email cho ${notification.sent} subscriber.`;
+  }
+
+  if (notification.sent > 0) {
+    return `${baseMessage} Đã gửi email cho ${notification.sent} subscriber, ${notification.failed} email bị lỗi.`;
+  }
+
+  if (
+    notification.skippedReason ===
+    "Email will be sent when the scheduled post is published."
+  ) {
+    return `${baseMessage} Email thông báo sẽ được gửi đến subscriber khi bài viết được publish.`;
+  }
+
+  return `${baseMessage} Chưa gửi được email cho subscriber${
+    notification.skippedReason ? `: ${notification.skippedReason}` : "."
+  }`;
 }
 
 function validatePost({

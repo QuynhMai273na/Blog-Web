@@ -61,7 +61,7 @@ export function ContactForm() {
   }
 
   return (
-    <form className="mt-4 space-y-5" onSubmit={handleSubmit}>
+    <form className="mt-4 min-w-0 space-y-4 sm:space-y-5" onSubmit={handleSubmit}>
       <label className="block">
         <span className="mb-2 block text-base font-semibold tracking-[0.01em] text-text_secondary">
           Tên của bạn
@@ -75,7 +75,7 @@ export function ContactForm() {
           placeholder="Nguyễn Văn A"
           autoComplete="name"
           required
-          className="input-field rounded-[22px] border-rose-200 bg-white px-5 py-4 text-[15px] text-text_primary shadow-[0_8px_24px_rgba(214,156,161,0.08)] placeholder:text-[15px] placeholder:text-text_secondary focus:border-rose-300 focus:ring-rose-200"
+          className="input-field rounded-[20px] border-rose-200 bg-white px-4 py-3.5 text-[15px] text-text_primary shadow-[0_8px_24px_rgba(214,156,161,0.08)] placeholder:text-[15px] placeholder:text-text_secondary focus:border-rose-300 focus:ring-rose-200 sm:rounded-[22px] sm:px-5 sm:py-4"
         />
         <FieldError message={fieldErrors.name} />
       </label>
@@ -93,7 +93,7 @@ export function ContactForm() {
           placeholder="email@example.com"
           autoComplete="email"
           required
-          className="input-field rounded-[22px] border-rose-200 bg-white px-5 py-4 text-[15px] text-text_primary shadow-[0_8px_24px_rgba(214,156,161,0.08)] placeholder:text-[15px] placeholder:text-text_secondary focus:border-rose-300 focus:ring-rose-200"
+          className="input-field rounded-[20px] border-rose-200 bg-white px-4 py-3.5 text-[15px] text-text_primary shadow-[0_8px_24px_rgba(214,156,161,0.08)] placeholder:text-[15px] placeholder:text-text_secondary focus:border-rose-300 focus:ring-rose-200 sm:rounded-[22px] sm:px-5 sm:py-4"
         />
         <FieldError message={fieldErrors.email} />
       </label>
@@ -125,7 +125,7 @@ export function ContactForm() {
           }
           placeholder="Chia sẻ điều bạn muốn nói với mình..."
           required
-          className="input-field min-h-40 resize-none overflow-hidden rounded-[24px] border-rose-200 bg-white px-5 py-4 text-[15px] text-text_primary shadow-[0_8px_24px_rgba(214,156,161,0.08)] placeholder:font-serif placeholder:text-[15px] placeholder:text-text_secondary focus:border-rose-300 focus:ring-rose-200"
+          className="input-field min-h-40 resize-none overflow-hidden rounded-[22px] border-rose-200 bg-white px-4 py-3.5 text-[15px] text-text_primary shadow-[0_8px_24px_rgba(214,156,161,0.08)] placeholder:font-serif placeholder:text-[15px] placeholder:text-text_secondary focus:border-rose-300 focus:ring-rose-200 sm:rounded-[24px] sm:px-5 sm:py-4"
         />
         <FieldError message={fieldErrors.message} />
       </label>
@@ -150,7 +150,7 @@ export function ContactForm() {
         <button
           type="submit"
           disabled={status === "loading" || !isFormValid}
-          className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-[#a8bfa0] px-7 py-3 text-[13px] font-semibold tracking-[0.08em] text-white shadow-[0_4px_14px_rgba(168,191,160,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#96b08d] hover:shadow-[0_6px_20px_rgba(168,191,160,0.55)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-full bg-[#a8bfa0] px-7 py-3 text-[13px] font-semibold tracking-[0.08em] text-white shadow-[0_4px_14px_rgba(168,191,160,0.45)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#96b08d] hover:shadow-[0_6px_20px_rgba(168,191,160,0.55)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
         >
           {status === "loading" ? "Đang gửi..." : "Gửi tin nhắn"}
         </button>

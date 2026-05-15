@@ -6,16 +6,23 @@
 :root {
   --background: #fdfcf8;
   --foreground: #2d3e2f;
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 @layer base {
   html {
     @apply h-full overflow-hidden bg-cream text-base;
+    scroll-padding-top: 72px;
   }
 
   body {
     @apply h-full overflow-hidden bg-cream font-sans text-base text-sage-800 antialiased;
     line-height: 1.6;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
   }
 
   #__next {
@@ -92,6 +99,48 @@
   .btn-primary {
     @apply rounded-full bg-sage-300 px-8 py-3 text-base font-medium text-white shadow-sm transition-all duration-300 hover:bg-sage-500;
   }
+
+  .route-shell {
+    animation: pageReveal 360ms var(--ease-out-soft) both;
+  }
+
+  .soft-panel {
+    transition:
+      opacity 220ms var(--ease-out-soft),
+      translate 260ms var(--ease-out-soft),
+      scale 260ms var(--ease-out-soft),
+      visibility 220ms linear;
+    will-change: opacity, translate, scale;
+  }
+
+  .soft-panel-closed {
+    @apply pointer-events-none invisible opacity-0;
+    translate: 0 -6px;
+    scale: 0.98;
+  }
+
+  .soft-panel-open {
+    @apply pointer-events-auto visible opacity-100;
+    translate: 0 0;
+    scale: 1;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden bg-rose-100/60;
+  }
+
+  .skeleton::after {
+    content: "";
+    @apply absolute inset-y-0 w-1/2;
+    left: -50%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.55),
+      transparent
+    );
+    animation: shimmer 1.45s ease-in-out infinite;
+  }
 }
 
 @keyframes fadeIn {
@@ -107,4 +156,40 @@
 
 .animate-bloom {
   animation: fadeIn 1s ease-out forwards;
+}
+
+@keyframes pageReveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes shimmer {
+  to {
+    left: 100%;
+  }
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: var(--ease-out-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }

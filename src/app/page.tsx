@@ -1,4 +1,5 @@
 import PostCard from "@/components/blog/PostCard";
+import AutoRefresh from "@/components/common/AutoRefresh";
 import { SubscribeForm } from "@/components/forms/SubscribeForm";
 import {
   BLOG_CATEGORY_SLUGS,
@@ -28,13 +29,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     params?.cat && isBlogCategorySlug(params.cat) ? params.cat : undefined;
   const [recentPosts, categories] = await Promise.all([
     categorySlug
-      ? getPublishedPosts({ categorySlug, limit: 4 })
+      ? getPublishedPosts({
+          categorySlug,
+          limit: 4,
+          prioritizeFeatured: false,
+        })
       : getLatestPostsByCategorySlugs(BLOG_CATEGORY_SLUGS),
     getCategoryOptions(),
   ]);
 
   return (
     <div className="animate-bloom">
+      <AutoRefresh intervalMs={60000} />
       <section className="relative overflow-hidden bg-cream px-4 py-16 text-center md:py-20">
         <div
           aria-hidden
