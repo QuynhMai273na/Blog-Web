@@ -1,7 +1,9 @@
 import PostCard from "@/components/blog/PostCard";
+import AutoRefresh from "@/components/common/AutoRefresh";
 import { SubscribeForm } from "@/components/forms/SubscribeForm";
 import {
   BLOG_CATEGORY_SLUGS,
+  getBlogCategoryStyle,
   type BlogCategorySlug,
 } from "@/constants/categories";
 import Link from "next/link";
@@ -21,26 +23,24 @@ function isBlogCategorySlug(value: string): value is BlogCategorySlug {
   return BLOG_CATEGORY_SLUGS.includes(value as BlogCategorySlug);
 }
 
-function getCategoryIcon(slug: string) {
-  if (slug === "yoga") return "🧘";
-  if (slug === "finance") return "💰";
-  if (slug === "parenting") return "👶";
-  return "🌻";
-}
-
 export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const categorySlug =
     params?.cat && isBlogCategorySlug(params.cat) ? params.cat : undefined;
   const [recentPosts, categories] = await Promise.all([
     categorySlug
-      ? getPublishedPosts({ categorySlug, limit: 4 })
+      ? getPublishedPosts({
+          categorySlug,
+          limit: 4,
+          prioritizeFeatured: false,
+        })
       : getLatestPostsByCategorySlugs(BLOG_CATEGORY_SLUGS),
     getCategoryOptions(),
   ]);
 
   return (
     <div className="animate-bloom">
+      <AutoRefresh intervalMs={60000} />
       <section className="relative overflow-hidden bg-cream px-4 py-16 text-center md:py-20">
         <div
           aria-hidden
@@ -101,7 +101,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 : "border-rose-100 text-sage-800 hover:border-rose-200 hover:text-sage-800",
             ].join(" ")}
           >
-            <span aria-hidden>{getCategoryIcon(category.value)}</span>
+            <span aria-hidden>{getBlogCategoryStyle(category.value).icon}</span>
             {category.label}
           </Link>
         ))}
@@ -141,7 +141,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <h2 className="my-2 font-serif text-3xl font-bold tracking-[1px] text-sage-800/90">
           Cùng mình đi qua hành trình mỗi tuần nhé
         </h2>
-        <p className="mb-8 font-serif text-[13px]  text-sage-800">
+        <p className="mb-8 font-serif text-base  text-sage-800">
           Đăng ký email để nhận thông báo về những bài viết mới nhất.
         </p>
 

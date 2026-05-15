@@ -149,7 +149,7 @@ export function ActionDialog({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[1000] flex items-center justify-center overflow-hidden overscroll-contain bg-[#2d1f1f]/65 px-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[1000] flex items-center justify-center overflow-hidden overscroll-contain bg-[#2d1f1f]/65 px-4 backdrop-blur-sm animate-[fadeIn_180ms_var(--ease-out-soft)_both]"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -166,11 +166,24 @@ export function ActionDialog({
       }}
     >
       {onSubmit ? (
-        <form className={panelClassName} onSubmit={onSubmit}>
+        <form
+          className={cn(
+            panelClassName,
+            "animate-[pageReveal_220ms_var(--ease-out-soft)_both]",
+          )}
+          onSubmit={onSubmit}
+        >
           {content}
         </form>
       ) : (
-        <div className={panelClassName}>{content}</div>
+        <div
+          className={cn(
+            panelClassName,
+            "animate-[pageReveal_220ms_var(--ease-out-soft)_both]",
+          )}
+        >
+          {content}
+        </div>
       )}
     </div>,
     document.body,

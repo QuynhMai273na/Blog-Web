@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { BLOG_CATEGORY_SLUGS, type BlogCategorySlug } from "@/constants/categories";
+import {
+  hasUnresolvedImageSources,
+  syncPostAssetsForPost,
+} from "@/services/post-assets.service";
+import {
+  sendNewPostNotification,
+  type SubscriberNotificationResult,
+} from "@/services/subscriber-notification.service";
 
 type PublishMode = "draft" | "scheduled" | "published";
 
@@ -12,9 +20,16 @@ type CreatePostPayload = {
   category?: BlogCategorySlug;
   publishMode?: PublishMode;
   scheduledAt?: string | null;
-  coverImage?: string | null;
-  coverFileName?: string;
+  thumbnailUrl?: string | null;
+  coverAssetId?: string | null;
+  contentJson?: unknown;
+  uploadedAssetIds?: string[];
   tags?: string[];
+  options?: {
+    comments?: boolean;
+    featured?: boolean;
+    emailSubscribers?: boolean;
+  };
 };
 
 export async function POST(request: Request) {
@@ -77,12 +92,12 @@ export async function POST(request: Request) {
   const slug = await createUniqueSlug(supabase, payload.title!.trim());
   const status = getPostStatus(payload.publishMode);
   const tags = normalizeTags(payload.tags);
-  const thumbnailUrl = await uploadCoverImage({
-    supabase,
-    slug,
-    coverImage: payload.coverImage,
-    coverFileName: payload.coverFileName,
-  });
+  const thumbnailUrl = payload.thumbnailUrl ?? null;
+  const allowComments = payload.options?.comments ?? true;
+  const isFeatured = payload.options?.featured ?? false;
+  const featuredAt = isFeatured ? new Date().toISOString() : null;
+  const shouldNotifySubscribers =
+    payload.options?.emailSubscribers === true && status !== "draft";
 
   const { data: post, error: insertError } = await supabase
     .from("posts")
@@ -90,10 +105,17 @@ export async function POST(request: Request) {
       title: payload.title!.trim(),
       slug,
       content: payload.content!.trim(),
+      content_json: payload.contentJson ?? null,
       summary: payload.excerpt!.trim(),
       category_id: category.id,
       thumbnail_url: thumbnailUrl,
       tags,
+      allow_comments: allowComments,
+      is_featured: isFeatured,
+      featured_at: featuredAt,
+      notify_subscribers_on_publish: shouldNotifySubscribers,
+      subscriber_notified_at: null,
+      subscriber_notification_error: null,
       status,
       published_at:
         status === "published"
@@ -113,12 +135,113 @@ export async function POST(request: Request) {
     );
   }
 
+  const assetSync = await syncPostAssetsForPost({
+    supabase,
+    postId: post.id,
+    coverAssetId: payload.coverAssetId,
+    contentJson: payload.contentJson,
+    uploadedAssetIds: payload.uploadedAssetIds,
+    userId: user.id,
+  });
+
+  if (assetSync.error) {
+    return NextResponse.json(
+      { error: "Bai viet da luu nhung khong the lien ket anh." },
+      { status: 500 },
+    );
+  }
+
   revalidatePath("/");
   revalidatePath("/posts");
   revalidatePath("/dashboard");
   revalidatePath(`/category/${categorySlug}`);
 
-  return NextResponse.json({ post });
+  const notification = await maybeNotifySubscribers({
+    request,
+    supabase,
+    postId: post.id,
+    requested: shouldNotifySubscribers,
+    postStatus: post.status,
+    slug: post.slug,
+    title: payload.title!.trim(),
+    excerpt: payload.excerpt!.trim(),
+  });
+
+  return NextResponse.json({ post, notification });
+}
+
+async function maybeNotifySubscribers({
+  request,
+  supabase,
+  postId,
+  requested,
+  postStatus,
+  slug,
+  title,
+  excerpt,
+}: {
+  request: Request;
+  supabase: ReturnType<typeof createClient>;
+  postId: string;
+  requested: boolean;
+  postStatus: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+}): Promise<SubscriberNotificationResult | undefined> {
+  if (!requested) return undefined;
+
+  if (postStatus !== "published") {
+    return {
+      requested: true,
+      sent: 0,
+      failed: 0,
+      skippedReason: "Email will be sent when the scheduled post is published.",
+    };
+  }
+
+  const result = await sendNewPostNotification({
+    title,
+    excerpt,
+    url: new URL(`/posts/${slug}`, request.url).toString(),
+  });
+
+  await updateSubscriberNotificationState({
+    supabase,
+    postId,
+    result,
+  });
+
+  return result;
+}
+
+async function updateSubscriberNotificationState({
+  supabase,
+  postId,
+  result,
+}: {
+  supabase: ReturnType<typeof createClient>;
+  postId: string;
+  result: SubscriberNotificationResult;
+}) {
+  const shouldMarkComplete =
+    result.sent > 0 ||
+    (!result.skippedReason && result.failed === 0) ||
+    result.skippedReason === "No subscribers found.";
+
+  const { error } = await supabase
+    .from("posts")
+    .update({
+      subscriber_notified_at: shouldMarkComplete ? new Date().toISOString() : null,
+      subscriber_notification_error: shouldMarkComplete
+        ? null
+        : (result.skippedReason ?? `Failed to send ${result.failed} emails.`),
+    })
+    .eq("id", postId);
+
+  if (error) {
+    console.error("[admin.posts.notify.mark]", error);
+  }
 }
 
 function normalizeTags(tags: unknown) {
@@ -139,6 +262,16 @@ function validatePayload(payload: CreatePostPayload | null) {
   if (!payload.title?.trim()) return "Vui lòng nhập tiêu đề bài viết.";
   if (!payload.excerpt?.trim()) return "Vui lòng nhập tóm tắt bài viết.";
   if (!payload.content?.trim()) return "Vui lòng nhập nội dung bài viết.";
+  if (hasUnresolvedImageSources(payload.contentJson)) {
+    return "Vui long doi anh tai len xong truoc khi luu.";
+  }
+  if (
+    typeof payload.thumbnailUrl === "string" &&
+    (payload.thumbnailUrl.startsWith("data:image/") ||
+      payload.thumbnailUrl.startsWith("blob:"))
+  ) {
+    return "Anh bia chua tai len xong.";
+  }
   if (payload.category && !BLOG_CATEGORY_SLUGS.includes(payload.category)) {
     return "Danh mục không hợp lệ.";
   }
@@ -202,52 +335,4 @@ function slugify(value: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 90);
-}
-
-async function uploadCoverImage({
-  supabase,
-  slug,
-  coverImage,
-  coverFileName,
-}: {
-  supabase: ReturnType<typeof createClient>;
-  slug: string;
-  coverImage?: string | null;
-  coverFileName?: string;
-}) {
-  if (!coverImage?.startsWith("data:image/")) return null;
-
-  const match = coverImage.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
-  if (!match) return null;
-
-  const [, contentType, base64] = match;
-  const extension = getImageExtension(contentType, coverFileName);
-  const bytes = Uint8Array.from(Buffer.from(base64, "base64"));
-  const path = `${slug}-${Date.now()}.${extension}`;
-
-  const { error } = await supabase.storage
-    .from("post-covers")
-    .upload(path, bytes, {
-      contentType,
-      upsert: false,
-    });
-
-  if (error) {
-    console.error("[admin.posts.cover]", error);
-    return null;
-  }
-
-  const { data } = supabase.storage.from("post-covers").getPublicUrl(path);
-  return data.publicUrl;
-}
-
-function getImageExtension(contentType: string, fileName?: string) {
-  const existingExtension = fileName?.split(".").pop()?.toLowerCase();
-  if (existingExtension && ["jpg", "jpeg", "png", "webp"].includes(existingExtension)) {
-    return existingExtension === "jpeg" ? "jpg" : existingExtension;
-  }
-
-  if (contentType === "image/png") return "png";
-  if (contentType === "image/webp") return "webp";
-  return "jpg";
 }

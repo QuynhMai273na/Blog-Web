@@ -22,8 +22,6 @@ import {
   MessageCircle,
   Pin,
   Quote,
-  Search,
-  Sparkles,
   Type,
   Underline as UnderlineIcon,
 } from "lucide-react";
@@ -32,7 +30,6 @@ import {
   ReactNode,
   Suspense,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
@@ -45,6 +42,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import TiptapImage from "@tiptap/extension-image";
 import TiptapLink from "@tiptap/extension-link";
 import { X } from "lucide-react";
+import { RichPostContent } from "@/components/blog/RichPostContent";
 import { BLOG_CATEGORIES, type BlogCategorySlug } from "@/constants/categories";
 import { createClient } from "@/lib/supabase/client";
 import CustomSelect from "@/components/ui/CustomSelect";
@@ -95,10 +93,21 @@ const toggleMeta: Array<{
   { key: "comments", label: "Cho phép bình luận", icon: MessageCircle },
   { key: "featured", label: "Ghim lên đầu", icon: Pin },
   { key: "emailSubscribers", label: "Gửi email subscribers", icon: Mail },
-  { key: "showHomepage", label: "Hiển thị trang chủ", icon: Sparkles },
 ];
 
 const averageWordsPerMinute = 220;
+const defaultToggles: Record<ToggleKey, boolean> = {
+  comments: true,
+  featured: false,
+  emailSubscribers: false,
+  showHomepage: true,
+};
+const defaultSidebarOpen: Record<string, boolean> = {
+  publish: true,
+  cover: false,
+  category: false,
+  options: false,
+};
 const editorPageBackground =
   // "bg-[radial-gradient(circle_at_top_left,rgba(252,228,230,0.78),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(209,231,221,0.56),transparent_32%),linear-gradient(180deg,#fdfbf6_0%,#f8f1e7_50%,#fcfaf6_100%)]";
   "bg-[radial-gradient(circle_at_top_left,rgba(252,228,230,0.78),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(209,231,221,0.56),transparent_32%),radial-gradient(circle_at_12%_88%,rgba(252,228,230,0.6),transparent_34%),radial-gradient(circle_at_88%_88%,rgba(209,231,221,0.55),transparent_34%),linear-gradient(180deg,#fdfbf6_0%,#f8f1e7_50%,#fcfaf6_100%)]";
@@ -110,6 +119,42 @@ type NoticeState = {
 } | null;
 
 type SaveIntent = "draft" | "publish";
+type AssetKind = "cover" | "inline";
+
+type UploadResponse = {
+  assetId: string;
+  url: string;
+  path: string;
+  error?: string;
+};
+
+type PostAssetRow = {
+  id: string;
+  kind: AssetKind;
+  storage_path: string;
+  public_url: string;
+  status: "pending" | "attached";
+};
+
+const EditorImage = TiptapImage.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      assetId: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-asset-id"),
+        renderHTML: (attributes) =>
+          attributes.assetId ? { "data-asset-id": attributes.assetId } : {},
+      },
+      tempId: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-upload-temp-id"),
+        renderHTML: (attributes) =>
+          attributes.tempId ? { "data-upload-temp-id": attributes.tempId } : {},
+      },
+    };
+  },
+});
 
 function ToolbarBtn({
   label,
@@ -143,32 +188,46 @@ function ToolbarBtn({
 
 function ActionButtons({
   disabled,
+  isEditing,
   isSaving,
   onDraft,
+  onCancel,
   onPreview,
   onPublish,
 }: {
   disabled: boolean;
+  isEditing: boolean;
   isSaving: SaveIntent | null;
   onDraft: () => void;
+  onCancel: () => void;
   onPreview: () => void;
   onPublish: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
       <button
         type="button"
-        onClick={onDraft}
-        disabled={disabled || isSaving !== null}
-        className="rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-[#8a6b6b] transition-all duration-200 hover:border-rose-300 hover:bg-rose-50"
+        onClick={onCancel}
+        disabled={isSaving !== null}
+        className="flex-1 rounded-full border border-rose-100 bg-white px-4 py-2 text-sm font-medium text-[#9a6570] transition-all duration-200 hover:border-rose-200 hover:bg-rose-50 sm:flex-none"
       >
-        {isSaving === "draft" ? "Đang lưu..." : "Lưu nháp"}
+        Hủy
       </button>
+      {!isEditing && (
+        <button
+          type="button"
+          onClick={onDraft}
+          disabled={disabled || isSaving !== null}
+          className="flex-1 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-[#8a6b6b] transition-all duration-200 hover:border-rose-300 hover:bg-rose-50 sm:flex-none"
+        >
+          {isSaving === "draft" ? "Đang lưu..." : "Lưu nháp"}
+        </button>
+      )}
       <button
         type="button"
         onClick={onPreview}
         disabled={disabled}
-        className="rounded-full border border-sage-100 bg-sage-50 px-4 py-2 text-sm font-medium text-[#64806f] transition-all duration-200 hover:border-sage-300 hover:bg-white"
+        className="flex-1 rounded-full border border-sage-100 bg-sage-50 px-4 py-2 text-sm font-medium text-[#64806f] transition-all duration-200 hover:border-sage-300 hover:bg-white sm:flex-none"
       >
         Xem trước
       </button>
@@ -176,9 +235,13 @@ function ActionButtons({
         type="button"
         onClick={onPublish}
         disabled={disabled || isSaving !== null}
-        className="rounded-full bg-sage-300 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(168,198,159,0.32)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-sage-800"
+        className="flex-1 rounded-full bg-sage-300 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(168,198,159,0.32)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-sage-800 sm:flex-none"
       >
-        {isSaving === "publish" ? "Đang lưu..." : "Đăng bài"}
+        {isSaving === "publish"
+          ? "Đang lưu..."
+          : isEditing
+            ? "Lưu lại"
+            : "Đăng bài"}
       </button>
     </div>
   );
@@ -191,6 +254,7 @@ function SidebarSection({
   iconColor,
   open,
   onToggle,
+  className,
   children,
 }: {
   id: string;
@@ -199,10 +263,13 @@ function SidebarSection({
   iconColor: string;
   open: boolean;
   onToggle: (id: string) => void;
+  className?: string;
   children: ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-[26px] border border-white/90 bg-[#fffdfb]/95 shadow-[0_16px_50px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
+    <section
+      className={`relative rounded-[26px] border border-white/90 bg-[#fffdfb]/95 shadow-[0_16px_50px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md ${className ?? ""}`}
+    >
       <button
         type="button"
         onClick={() => onToggle(id)}
@@ -220,11 +287,17 @@ function SidebarSection({
           ▾
         </span>
       </button>
-      {open && (
-        <div className="border-t border-rose-100/60 px-5 pb-5 pt-4">
-          {children}
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[var(--ease-out-soft)] ${
+          open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="border-t border-rose-100/60 px-5 pb-5 pt-4">
+            {children}
+          </div>
         </div>
-      )}
+      </div>
     </section>
   );
 }
@@ -254,15 +327,26 @@ function WritePageContent() {
   const searchParams = useSearchParams();
   const editSlug = searchParams.get("edit");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const coverFileRef = useRef<File | null>(null);
+  const inlineFileInputRef = useRef<HTMLInputElement>(null);
+  const sessionAssetIdsRef = useRef<Set<string>>(new Set());
+  const coverObjectUrlRef = useRef<string | null>(null);
 
   const [title, setTitle] = useState("");
   const [excerpt, setExcerpt] = useState("");
   const [publishMode, setPublishMode] = useState<PublishMode>("draft");
   const [scheduledAt, setScheduledAt] = useState("");
   const [coverImage, setCoverImage] = useState<string | null>(null);
+  const [coverPublicUrl, setCoverPublicUrl] = useState<string | null>(null);
+  const [coverAssetId, setCoverAssetId] = useState<string | null>(null);
+  const [coverAssetStatus, setCoverAssetStatus] = useState<
+    "pending" | "attached" | null
+  >(null);
+  const [coverStoragePath, setCoverStoragePath] = useState("");
   const [coverFileName, setCoverFileName] = useState("");
+  const [isCoverUploading, setIsCoverUploading] = useState(false);
+  const [inlineUploadCount, setInlineUploadCount] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [wordCount, setWordCount] = useState(0);
   const [category, setCategory] = useState<BlogCategorySlug>(
     categoryOptions[0].value,
   );
@@ -275,18 +359,10 @@ function WritePageContent() {
   const [isSaving, setIsSaving] = useState<SaveIntent | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
-  const [toggles, setToggles] = useState<Record<ToggleKey, boolean>>({
-    comments: true,
-    featured: false,
-    emailSubscribers: false,
-    showHomepage: true,
-  });
-  const [sidebarOpen, setSidebarOpen] = useState<Record<string, boolean>>({
-    publish: true,
-    cover: false,
-    category: false,
-    options: false,
-  });
+  const [toggles, setToggles] =
+    useState<Record<ToggleKey, boolean>>(defaultToggles);
+  const [sidebarOpen, setSidebarOpen] =
+    useState<Record<string, boolean>>(defaultSidebarOpen);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -295,14 +371,37 @@ function WritePageContent() {
       UnderlineExt,
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Placeholder.configure({ placeholder: "Bắt đầu câu chuyện của bạn..." }),
-      TiptapImage,
+      EditorImage,
       TiptapLink.configure({ openOnClick: false }),
     ],
     content: "",
+    onUpdate: ({ editor }) => {
+      setWordCount(countWords(editor.getText()));
+    },
     editorProps: {
       attributes: {
         class:
           "outline-none min-h-[520px] px-2 py-1 text-[1.08rem] leading-[2.05] font-serif",
+      },
+      handleDrop: (view, event) => {
+        const file = getFirstImageFile(event.dataTransfer?.files);
+        if (!file) return false;
+
+        event.preventDefault();
+        const coordinates = view.posAtCoords({
+          left: event.clientX,
+          top: event.clientY,
+        });
+        void handleInlineImageFile(file, coordinates?.pos);
+        return true;
+      },
+      handlePaste: (_view, event) => {
+        const file = getFirstImageFile(event.clipboardData?.files);
+        if (!file) return false;
+
+        event.preventDefault();
+        void handleInlineImageFile(file);
+        return true;
       },
     },
   });
@@ -331,6 +430,14 @@ function WritePageContent() {
   }, []);
 
   useEffect(() => {
+    return () => {
+      if (coverObjectUrlRef.current) {
+        URL.revokeObjectURL(coverObjectUrlRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (!editSlug || authState !== "admin" || !editor) return;
 
     fetch(`/api/admin/posts/${editSlug}`)
@@ -341,6 +448,12 @@ function WritePageContent() {
             title: string;
             summary: string | null;
             content: string | null;
+            content_json?: unknown;
+            thumbnail_url: string | null;
+            tags?: string[] | null;
+            allow_comments?: boolean | null;
+            is_featured?: boolean | null;
+            assets?: PostAssetRow[];
             status: PublishMode;
             published_at: string | null;
             categories:
@@ -359,19 +472,40 @@ function WritePageContent() {
           return;
         }
 
-        const postCategory = Array.isArray(result.post.categories)
-          ? result.post.categories[0]
-          : result.post.categories;
+        const post = result.post;
+        const postCategory = Array.isArray(post.categories)
+          ? post.categories[0]
+          : post.categories;
 
-        setEditingPostId(result.post.id);
-        setTitle(result.post.title);
-        setExcerpt(result.post.summary ?? "");
+        setEditingPostId(post.id);
+        setTitle(post.title);
+        setExcerpt(post.summary ?? "");
         setCategory(postCategory?.slug ?? categoryOptions[0].value);
-        setPublishMode(result.post.status ?? "draft");
-        setScheduledAt(toDatetimeLocalValue(result.post.published_at));
-        editor.commands.setContent(
-          plainContentToHtml(result.post.content ?? ""),
+        setPublishMode(post.status ?? "draft");
+        setScheduledAt(toDatetimeLocalValue(post.published_at));
+        setTags(post.tags ?? []);
+        setToggles((current) => ({
+          ...current,
+          comments: post.allow_comments ?? true,
+          featured: post.is_featured ?? false,
+        }));
+        setCoverImage(post.thumbnail_url ?? null);
+        setCoverPublicUrl(post.thumbnail_url ?? null);
+        const coverAsset = (post.assets ?? []).find(
+          (asset) =>
+            asset.kind === "cover" && asset.public_url === post.thumbnail_url,
         );
+        setCoverAssetId(coverAsset?.id ?? null);
+        setCoverAssetStatus(coverAsset ? "attached" : null);
+        setCoverStoragePath(coverAsset?.storage_path ?? "");
+        editor.commands.setContent(
+          isTiptapDocument(post.content_json)
+            ? (post.content_json as Parameters<
+                typeof editor.commands.setContent
+              >[0])
+            : plainContentToHtml(post.content ?? ""),
+        );
+        setWordCount(countWords(editor.getText()));
       })
       .catch((error: unknown) => {
         console.error("[write.edit.load]", error);
@@ -400,20 +534,11 @@ function WritePageContent() {
     }),
   });
 
-  const wordCount = useMemo(
-    () => {
-      if (!editor) return 0;
-      return editor.getText().trim().split(/\s+/).filter(Boolean).length;
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [editor?.state],
-  );
-
   const readTime = Math.max(1, Math.ceil(wordCount / averageWordsPerMinute));
+  const hasActiveUploads = isCoverUploading || inlineUploadCount > 0;
 
   function insertImageUrl() {
-    const url = window.prompt("Dán URL ảnh để chèn vào bài viết")?.trim();
-    if (url && editor) editor.chain().focus().setImage({ src: url }).run();
+    inlineFileInputRef.current?.click();
   }
 
   function insertLinkUrl() {
@@ -421,19 +546,267 @@ function WritePageContent() {
     if (url && editor) editor.chain().focus().setLink({ href: url }).run();
   }
 
-  function handleFile(file: File | null) {
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setNotice({ tone: "error", message: "Vui lòng chọn file ảnh hợp lệ." });
+  async function uploadImageAsset(file: File, kind: AssetKind) {
+    const formData = new FormData();
+    formData.set("file", file);
+    formData.set("kind", kind);
+
+    const response = await fetch("/api/admin/uploads", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = (await response
+      .json()
+      .catch(() => null)) as UploadResponse | null;
+
+    if (!response.ok || !result?.assetId || !result.url) {
+      throw new Error(result?.error ?? "Khong the tai anh.");
+    }
+
+    sessionAssetIdsRef.current.add(result.assetId);
+    return result;
+  }
+
+  async function deleteAsset(assetId: string) {
+    const response = await fetch(`/api/admin/uploads/${assetId}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      console.error("[write.asset.delete]", await response.text());
       return;
     }
-    coverFileRef.current = file;
-    setCoverFileName(file.name);
-    const reader = new FileReader();
-    reader.onload = () => {
-      setCoverImage(typeof reader.result === "string" ? reader.result : null);
+
+    sessionAssetIdsRef.current.delete(assetId);
+  }
+
+  async function cleanupPendingAssets() {
+    const pendingIds = Array.from(sessionAssetIdsRef.current);
+    await Promise.allSettled(pendingIds.map((assetId) => deleteAsset(assetId)));
+  }
+
+  async function handleCancel() {
+    await cleanupPendingAssets();
+    router.push("/dashboard");
+  }
+
+  function resetEditorForm() {
+    if (coverObjectUrlRef.current) {
+      URL.revokeObjectURL(coverObjectUrlRef.current);
+      coverObjectUrlRef.current = null;
+    }
+
+    sessionAssetIdsRef.current.clear();
+    setEditingPostId(null);
+    setTitle("");
+    setExcerpt("");
+    setPublishMode("draft");
+    setScheduledAt("");
+    setCoverImage(null);
+    setCoverPublicUrl(null);
+    setCoverAssetId(null);
+    setCoverAssetStatus(null);
+    setCoverStoragePath("");
+    setCoverFileName("");
+    setIsCoverUploading(false);
+    setInlineUploadCount(0);
+    setIsDragging(false);
+    setWordCount(0);
+    setCategory(categoryOptions[0].value);
+    setTagInput("");
+    setTags([]);
+    setToggles(defaultToggles);
+    setSidebarOpen(defaultSidebarOpen);
+    editor?.commands.clearContent();
+  }
+
+  function scrollToActionBar() {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: "smooth",
+        });
+      });
+    });
+  }
+
+  async function handleFile(file: File | null) {
+    if (!file) return;
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setNotice({ tone: "error", message: validationError });
+      return;
+    }
+
+    const previousCover = {
+      image: coverImage,
+      publicUrl: coverPublicUrl,
+      assetId: coverAssetId,
+      status: coverAssetStatus,
+      storagePath: coverStoragePath,
+      fileName: coverFileName,
     };
-    reader.readAsDataURL(file);
+
+    if (previousCover.status === "pending" && previousCover.assetId) {
+      await deleteAsset(previousCover.assetId);
+    }
+
+    if (coverObjectUrlRef.current) {
+      URL.revokeObjectURL(coverObjectUrlRef.current);
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    coverObjectUrlRef.current = previewUrl;
+    setCoverFileName(file.name);
+    setCoverImage(previewUrl);
+    setCoverPublicUrl(null);
+    setCoverAssetId(null);
+    setCoverAssetStatus(null);
+    setCoverStoragePath("");
+    setIsCoverUploading(true);
+
+    try {
+      const result = await uploadImageAsset(file, "cover");
+      setCoverImage(result.url);
+      setCoverPublicUrl(result.url);
+      setCoverAssetId(result.assetId);
+      setCoverAssetStatus("pending");
+      setCoverStoragePath(result.path);
+      URL.revokeObjectURL(previewUrl);
+      coverObjectUrlRef.current = null;
+    } catch (error) {
+      console.error("[write.cover.upload]", error);
+      setNotice({
+        tone: "error",
+        message:
+          error instanceof Error ? error.message : "Khong the tai anh bia.",
+      });
+      setCoverImage(previousCover.image);
+      setCoverPublicUrl(previousCover.publicUrl);
+      setCoverAssetId(previousCover.assetId);
+      setCoverAssetStatus(previousCover.status);
+      setCoverStoragePath(previousCover.storagePath);
+      setCoverFileName(previousCover.fileName);
+      URL.revokeObjectURL(previewUrl);
+      coverObjectUrlRef.current = null;
+    } finally {
+      setIsCoverUploading(false);
+    }
+  }
+
+  async function handleRemoveCover() {
+    if (coverAssetStatus === "pending" && coverAssetId) {
+      await deleteAsset(coverAssetId);
+    }
+
+    if (coverObjectUrlRef.current) {
+      URL.revokeObjectURL(coverObjectUrlRef.current);
+      coverObjectUrlRef.current = null;
+    }
+
+    setCoverImage(null);
+    setCoverPublicUrl(null);
+    setCoverAssetId(null);
+    setCoverAssetStatus(null);
+    setCoverStoragePath("");
+    setCoverFileName("");
+  }
+
+  async function handleInlineImageFile(file: File | null, position?: number) {
+    if (!file || !editor) return;
+    const validationError = validateImageFile(file);
+    if (validationError) {
+      setNotice({ tone: "error", message: validationError });
+      return;
+    }
+
+    const tempId = crypto.randomUUID();
+    const previewUrl = URL.createObjectURL(file);
+    const imageNode = {
+      type: "image",
+      attrs: {
+        src: previewUrl,
+        alt: file.name,
+        title: null,
+        assetId: null,
+        tempId,
+      },
+    };
+
+    if (typeof position === "number") {
+      editor.chain().focus().insertContentAt(position, imageNode).run();
+    } else {
+      editor.chain().focus().insertContent(imageNode).run();
+    }
+
+    setInlineUploadCount((count) => count + 1);
+    try {
+      const result = await uploadImageAsset(file, "inline");
+      const replaced = replaceEditorImage(tempId, {
+        src: result.url,
+        assetId: result.assetId,
+        tempId: null,
+        alt: file.name,
+      });
+
+      if (!replaced) {
+        await deleteAsset(result.assetId);
+      }
+    } catch (error) {
+      console.error("[write.inline.upload]", error);
+      removeEditorImage(tempId);
+      setNotice({
+        tone: "error",
+        message: error instanceof Error ? error.message : "Khong the tai anh.",
+      });
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+      setInlineUploadCount((count) => Math.max(0, count - 1));
+    }
+  }
+
+  function replaceEditorImage(
+    tempId: string,
+    attrs: { src: string; assetId: string; tempId: null; alt: string },
+  ) {
+    if (!editor) return false;
+
+    let replaced = false;
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name !== "image" || node.attrs.tempId !== tempId) {
+        return true;
+      }
+
+      editor.view.dispatch(
+        editor.state.tr.setNodeMarkup(pos, undefined, {
+          ...node.attrs,
+          ...attrs,
+        }),
+      );
+      replaced = true;
+      return false;
+    });
+
+    return replaced;
+  }
+
+  function removeEditorImage(tempId: string) {
+    if (!editor) return false;
+
+    let removed = false;
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name !== "image" || node.attrs.tempId !== tempId) {
+        return true;
+      }
+
+      editor.view.dispatch(editor.state.tr.delete(pos, pos + node.nodeSize));
+      removed = true;
+      return false;
+    });
+
+    return removed;
   }
 
   function handleTagSubmit() {
@@ -459,6 +832,8 @@ function WritePageContent() {
 
   async function handleSubmit(intent: SaveIntent) {
     setNotice(null);
+    const contentJson = editor?.getJSON() ?? null;
+    const plainContent = toPlainPostContent(contentJson);
 
     const validationError = validatePost({
       title,
@@ -473,8 +848,19 @@ function WritePageContent() {
       return;
     }
 
+    if (hasActiveUploads || hasUnresolvedEditorImages(contentJson)) {
+      setNotice({
+        tone: "error",
+        message: "Vui long doi anh tai len xong truoc khi luu.",
+      });
+      return;
+    }
+
+    const wasEditing = Boolean(editingPostId);
     setIsSaving(intent);
     const requestedMode = intent === "draft" ? "draft" : publishMode;
+    const shouldEmailSubscribers =
+      !editingPostId && requestedMode !== "draft" && toggles.emailSubscribers;
     const response = await fetch(
       editingPostId ? `/api/admin/posts/${editingPostId}` : "/api/admin/posts",
       {
@@ -483,16 +869,20 @@ function WritePageContent() {
         body: JSON.stringify({
           title,
           excerpt,
-          content: toPlainPostContent(editor?.getJSON()),
-          html: editor?.getHTML() ?? "",
+          content: plainContent,
+          contentJson,
           category,
           tags,
-
-          coverImage,
-          coverFileName,
+          thumbnailUrl: coverPublicUrl,
+          coverAssetId,
+          uploadedAssetIds: Array.from(sessionAssetIdsRef.current),
           publishMode: requestedMode,
           scheduledAt: requestedMode === "scheduled" ? scheduledAt : null,
-          options: toggles,
+          options: {
+            comments: toggles.comments,
+            featured: toggles.featured,
+            emailSubscribers: shouldEmailSubscribers,
+          },
         }),
       },
     );
@@ -500,6 +890,12 @@ function WritePageContent() {
     const result = (await response.json().catch(() => null)) as {
       error?: string;
       post?: { slug: string; status: string };
+      notification?: {
+        requested: boolean;
+        sent: number;
+        failed: number;
+        skippedReason?: string;
+      };
     } | null;
 
     setIsSaving(null);
@@ -512,9 +908,9 @@ function WritePageContent() {
       return;
     }
 
-    setNotice({
+    const successNotice: NoticeState = {
       tone: "success",
-      message: editingPostId
+      message: wasEditing
         ? "Bài viết đã được cập nhật."
         : result.post.status === "published"
           ? "Bài viết đã được đăng."
@@ -525,11 +921,26 @@ function WritePageContent() {
         result.post.status === "published"
           ? `/posts/${result.post.slug}`
           : "/dashboard",
-    });
+    };
+    if (result.notification?.requested) {
+      successNotice.message = appendSubscriberNotificationMessage(
+        successNotice.message,
+        result.notification,
+      );
+    }
+
+    resetEditorForm();
+    setNotice(successNotice);
 
     if (result.post.status === "published") {
       router.refresh();
     }
+
+    if (wasEditing) {
+      window.history.replaceState(null, "", "/dashboard/write");
+    }
+
+    scrollToActionBar();
   }
 
   if (authState === "loading") {
@@ -563,26 +974,33 @@ function WritePageContent() {
     );
   }
 
+  const isSubscriberEmailEnabled = !editingPostId && publishMode !== "draft";
+  const visibleToggleMeta = toggleMeta.filter(
+    ({ key }) => key !== "emailSubscribers" || !editingPostId,
+  );
+
   return (
     <div className={` ${editorPageBackground}`}>
       {/* ── page header ── */}
-      <header className="relative flex items-start justify-between bg-white/80 px-6 py-8 shadow-[0_24px_70px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
+      <header className="relative grid gap-4 bg-white/80 px-4 py-6 shadow-[0_24px_70px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md md:px-6 lg:grid-cols-[1fr_minmax(0,2fr)_1fr] lg:items-start lg:py-8">
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[0.32em] text-sage-300">
             Dashboard / Editor
           </p>
         </div>
 
-        <div className="absolute left-1/2 top-6 w-full max-w-2xl -translate-x-1/2 text-center px-4">
-          <h1 className="mt-3 font-serif text-3xl font-normal leading-[1.4] tracking-normal text-text_black md:text-[40px]">
+        <div className="w-full max-w-2xl text-left lg:mx-auto lg:text-center">
+          <h1 className="font-serif text-3xl font-normal leading-[1.4] tracking-normal text-text_black md:text-[40px]">
             {editingPostId ? "Sửa bài viết" : "Viết bài mới"}
           </h1>
           <p className="mt-2 text-base text-[#7f6d6d]">
-            Soạn nội dung, lưu nháp, xem trước, đăng ngay hoặc lên lịch.
+            {editingPostId
+              ? "Cập nhật nội dung, xem trước và lưu lại thay đổi."
+              : "Soạn nội dung, lưu nháp, xem trước, đăng ngay hoặc lên lịch."}
           </p>
         </div>
 
-        <div className="rounded-[24px] border border-sage-100 bg-sage-50/80 px-5 py-4 shadow-sm">
+        <div className="rounded-[24px] border border-sage-100 bg-sage-50/80 px-5 py-4 shadow-sm lg:justify-self-end">
           <p className="font-medium text-base text-[#64806f]">
             Chỉnh sửa lần cuối
           </p>
@@ -599,13 +1017,23 @@ function WritePageContent() {
       </header>
 
       {/* ── Main scrollable area ── */}
-      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-6">
+      <div className="mx-auto max-w-[1440px] px-3 py-4 sm:px-4 md:px-6 md:py-6">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
           {/* ── Left: writing area ── */}
-          <div className="space-y-5 pr-2">
+          <div className="min-w-0 space-y-5 xl:pr-2">
             {/* Toolbar */}
-            <div className="sticky top-0 z-30 rounded-[26px] border border-white/90 bg-white/95 px-4 py-3 shadow-[0_8px_30px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
-              <div className="flex flex-wrap gap-2">
+            <div className="sticky top-0 z-30 rounded-[22px] border border-white/90 bg-white/95 px-3 py-3 shadow-[0_8px_30px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md md:rounded-[26px] md:px-4">
+              <input
+                ref={inlineFileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                className="hidden"
+                onChange={(event) => {
+                  void handleInlineImageFile(event.target.files?.[0] ?? null);
+                  event.target.value = "";
+                }}
+              />
+              <div className="flex gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0">
                 <ToolbarBtn
                   label="H2"
                   icon={Heading2}
@@ -709,9 +1137,9 @@ function WritePageContent() {
             </div>
 
             {/* Card chính — Title + Excerpt + Editor */}
-            <div className="overflow-hidden rounded-[34px] border border-white/90 bg-[#fffefd]/95 shadow-[0_24px_70px_rgba(45,62,47,0.1)] ring-1 ring-rose-100/70 backdrop-blur-md">
+            <div className="overflow-hidden rounded-[24px] border border-white/90 bg-[#fffefd]/95 shadow-[0_24px_70px_rgba(45,62,47,0.1)] ring-1 ring-rose-100/70 backdrop-blur-md md:rounded-[34px]">
               {/* Title */}
-              <div className="px-7 pt-7 md:px-10 md:pt-10">
+              <div className="px-5 pt-6 md:px-10 md:pt-10">
                 <label
                   htmlFor="title"
                   className="text-base font-semibold uppercase tracking-[0.2em] text-text_secondary"
@@ -728,10 +1156,10 @@ function WritePageContent() {
                 />
               </div>
 
-              <div className="mx-7 my-6 h-px bg-gradient-to-r from-rose-100 via-rose-200/60 to-transparent md:mx-10" />
+              <div className="mx-5 my-5 h-px bg-gradient-to-r from-rose-100 via-rose-200/60 to-transparent md:mx-10 md:my-6" />
 
               {/* Excerpt */}
-              <div className="px-7 md:px-10">
+              <div className="px-5 md:px-10">
                 <label
                   htmlFor="excerpt"
                   className="text-base font-semibold uppercase tracking-[0.2em] text-text_secondary"
@@ -747,11 +1175,11 @@ function WritePageContent() {
                 />
               </div>
 
-              <div className="mx-7 my-6 h-px bg-gradient-to-r from-rose-100 via-rose-200/60 to-transparent md:mx-10" />
+              <div className="mx-5 my-5 h-px bg-gradient-to-r from-rose-100 via-rose-200/60 to-transparent md:mx-10 md:my-6" />
 
               {/* Tiptap editor */}
               <div className="bg-[#fdfcfb] border-t border-rose-100/60">
-                <div className="flex items-center justify-between px-7 py-4 md:px-10">
+                <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-10">
                   <div>
                     <p className="text-base font-semibold uppercase tracking-[0.2em] text-text_secondary">
                       Nội dung chính
@@ -761,37 +1189,71 @@ function WritePageContent() {
                     </p>
                   </div>
                   <div className="rounded-full border border-rose-100 bg-rose-50/60 px-3 py-1.5 text-[11px] text-[#a07878]">
-                    {wordCount} từ · ~{readTime} phút
+                    {hasActiveUploads
+                      ? "Dang tai anh..."
+                      : `${wordCount} từ · ~${readTime} phút`}
                   </div>
                 </div>
-                <div className="px-7 pb-7 md:px-10 md:pb-10">
+                <div className="px-4 pb-5 md:px-10 md:pb-10">
                   <div
-                    className="rounded-[20px] border border-rose-100 bg-white shadow-[inset_0_2px_8px_rgba(180,140,140,0.06),0_2px_12px_rgba(180,140,140,0.08)] px-6 py-5 min-h-[520px] cursor-text transition-shadow duration-200 hover:shadow-[inset_0_2px_8px_rgba(180,140,140,0.08),0_6px_20px_rgba(180,140,140,0.14)] focus-within:border-rose-200 focus-within:shadow-[inset_0_2px_8px_rgba(180,140,140,0.08),0_6px_24px_rgba(214,156,161,0.18)]"
+                    className="max-h-[640px] min-h-[360px] cursor-text overflow-y-auto overscroll-contain rounded-[20px] border border-rose-100 bg-white px-4 py-4 shadow-[inset_0_2px_8px_rgba(180,140,140,0.06),0_2px_12px_rgba(180,140,140,0.08)] transition-shadow duration-200 hover:shadow-[inset_0_2px_8px_rgba(180,140,140,0.08),0_6px_20px_rgba(180,140,140,0.14)] focus-within:border-rose-200 focus-within:shadow-[inset_0_2px_8px_rgba(180,140,140,0.08),0_6px_24px_rgba(214,156,161,0.18)] md:min-h-[520px] md:px-6 md:py-5"
                     onClick={() => editor?.commands.focus()}
                   >
                     <EditorContent
                       editor={editor}
                       className="
                         [&_.ProseMirror]:outline-none
-                        [&_.ProseMirror]:min-h-[480px]
+                        [&_.ProseMirror]:min-h-[320px]
+                        md:[&_.ProseMirror]:min-h-[480px]
                         [&_.ProseMirror]:text-[#3a312f]
                         [&_.ProseMirror]:leading-[2]
+                        [&_.ProseMirror]:break-words
+                        [&_.ProseMirror]:[overflow-wrap:anywhere]
                         [&_.ProseMirror_p]:mb-4
                         [&_.ProseMirror_p]:text-[1.05rem]
+                        [&_.ProseMirror_p]:break-words
+                        [&_.ProseMirror_p]:[overflow-wrap:anywhere]
                         [&_.ProseMirror_h2]:font-serif
                         [&_.ProseMirror_h2]:text-[1.6rem]
                         [&_.ProseMirror_h2]:font-semibold
                         [&_.ProseMirror_h2]:text-[#3a312f]
                         [&_.ProseMirror_h2]:mt-8
                         [&_.ProseMirror_h2]:mb-3
+                        [&_.ProseMirror_h3]:font-serif
+                        [&_.ProseMirror_h3]:text-[1.28rem]
+                        [&_.ProseMirror_h3]:font-semibold
+                        [&_.ProseMirror_h3]:text-[#3a312f]
+                        [&_.ProseMirror_h3]:mt-6
+                        [&_.ProseMirror_h3]:mb-2
                         [&_.ProseMirror_blockquote]:border-l-[3px]
                         [&_.ProseMirror_blockquote]:border-rose-300
                         [&_.ProseMirror_blockquote]:pl-5
                         [&_.ProseMirror_blockquote]:italic
                         [&_.ProseMirror_blockquote]:text-[#7a6666]
                         [&_.ProseMirror_blockquote]:my-5
+                        [&_.ProseMirror_ul]:my-5
+                        [&_.ProseMirror_ul]:list-disc
+                        [&_.ProseMirror_ul]:pl-7
+                        [&_.ProseMirror_ol]:my-5
+                        [&_.ProseMirror_ol]:list-decimal
+                        [&_.ProseMirror_ol]:pl-7
+                        [&_.ProseMirror_li]:my-1
+                        [&_.ProseMirror_li]:pl-1
+                        [&_.ProseMirror_li]:text-[1.05rem]
+                        [&_.ProseMirror_li]:leading-8
+                        [&_.ProseMirror_li_p]:mb-0
+                        [&_.ProseMirror_li_p]:text-inherit
                         [&_.ProseMirror_a]:text-rose-400
                         [&_.ProseMirror_a]:underline
+                        [&_.ProseMirror_img]:my-6
+                        [&_.ProseMirror_img]:mx-auto
+                        [&_.ProseMirror_img]:block
+                        [&_.ProseMirror_img]:max-h-[360px]
+                        [&_.ProseMirror_img]:w-full
+                        [&_.ProseMirror_img]:max-w-[420px]
+                        [&_.ProseMirror_img]:rounded-[18px]
+                        [&_.ProseMirror_img]:object-contain
+                        [&_.ProseMirror_img[data-upload-temp-id]]:opacity-60
                         [&_.ProseMirror_.is-editor-empty:first-child::before]:text-[#c4b5b1]
                       "
                     />
@@ -801,7 +1263,7 @@ function WritePageContent() {
             </div>
 
             {/* Bottom action bar */}
-            <div className="flex items-center justify-between rounded-[28px] border border-white/80 bg-white/80 px-5 py-4 shadow-[0_12px_36px_rgba(45,62,47,0.06)] backdrop-blur-md">
+            <div className="flex flex-col gap-4 rounded-[24px] border border-white/80 bg-white/80 px-4 py-4 shadow-[0_12px_36px_rgba(45,62,47,0.06)] backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:px-5 md:rounded-[28px]">
               <div className="min-w-0">
                 {notice ? (
                   <p
@@ -826,9 +1288,11 @@ function WritePageContent() {
                 )}
               </div>
               <ActionButtons
-                disabled={!editor}
+                disabled={!editor || hasActiveUploads}
+                isEditing={Boolean(editingPostId)}
                 isSaving={isSaving}
                 onDraft={() => void handleSubmit("draft")}
+                onCancel={() => void handleCancel()}
                 onPreview={() => setIsPreviewOpen(true)}
                 onPublish={() => void handleSubmit("publish")}
               />
@@ -836,7 +1300,7 @@ function WritePageContent() {
           </div>
 
           {/* ── Right sidebar ── */}
-          <aside className="space-y-3">
+          <aside className="space-y-3 xl:sticky xl:top-4 xl:self-start">
             <SidebarSection
               id="publish"
               icon={CalendarDays}
@@ -910,7 +1374,10 @@ function WritePageContent() {
                 type="file"
                 accept="image/png,image/jpeg,image/webp"
                 className="hidden"
-                onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  void handleFile(e.target.files?.[0] ?? null);
+                  e.target.value = "";
+                }}
               />
               <button
                 type="button"
@@ -923,7 +1390,7 @@ function WritePageContent() {
                 onDrop={(e) => {
                   e.preventDefault();
                   setIsDragging(false);
-                  handleFile(e.dataTransfer.files?.[0] ?? null);
+                  void handleFile(e.dataTransfer.files?.[0] ?? null);
                 }}
                 className={`flex w-full flex-col items-center justify-center rounded-[20px] border border-dashed px-4 py-6 text-center transition-all duration-200 ${
                   isDragging
@@ -932,11 +1399,20 @@ function WritePageContent() {
                 }`}
               >
                 {coverImage ? (
-                  <img
-                    src={coverImage}
-                    alt="Cover"
-                    className="h-36 w-full rounded-[16px] object-cover"
-                  />
+                  <div className="w-full">
+                    <img
+                      src={coverImage}
+                      alt="Cover"
+                      className={`h-36 w-full rounded-[16px] object-cover ${
+                        isCoverUploading ? "opacity-60" : ""
+                      }`}
+                    />
+                    {isCoverUploading && (
+                      <p className="mt-2 text-[11px] font-semibold text-[#9a6570]">
+                        Dang tai anh...
+                      </p>
+                    )}
+                  </div>
                 ) : (
                   <>
                     <div className="mb-3 rounded-full border border-rose-100 bg-rose-50 p-3 text-xl">
@@ -956,6 +1432,26 @@ function WritePageContent() {
                   Đã chọn: {coverFileName}
                 </p>
               )}
+              {coverImage && (
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isCoverUploading}
+                    className="flex-1 rounded-[14px] border border-sage-100 bg-sage-50 px-3 py-2 text-xs font-medium text-[#64806f] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Đổi
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleRemoveCover()}
+                    disabled={isCoverUploading}
+                    className="flex-1 rounded-[14px] border border-rose-100 bg-rose-50 px-3 py-2 text-xs font-medium text-[#be123c] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    Xóa
+                  </button>
+                </div>
+              )}
             </SidebarSection>
 
             <SidebarSection
@@ -965,6 +1461,7 @@ function WritePageContent() {
               iconColor="text-[#d5ab72]"
               open={sidebarOpen.category}
               onToggle={toggleSidebar}
+              className="z-30"
             >
               <label className="text-xs font-semibold uppercase tracking-[0.22em] text-[#a58f8f]">
                 Danh mục chính
@@ -1032,26 +1529,40 @@ function WritePageContent() {
               onToggle={toggleSidebar}
             >
               <div className="space-y-2">
-                {toggleMeta.map(({ key, label, icon: Icon }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => handleToggle(key)}
-                    className="flex w-full items-center justify-between rounded-[16px] border border-rose-100 bg-white px-4 py-3 text-left hover:border-rose-200"
-                  >
-                    <span className="flex items-center gap-2.5 text-base text-[#6f5a5a]">
-                      <Icon className="h-4 w-4 text-[#aeb8c6]" />
-                      {label}
-                    </span>
-                    <span
-                      className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${toggles[key] ? "bg-sage-300" : "bg-rose-100"}`}
+                {visibleToggleMeta.map(({ key, label, icon: Icon }) => {
+                  const disabled =
+                    key === "emailSubscribers" && !isSubscriberEmailEnabled;
+                  const checked = toggles[key] && !disabled;
+
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => {
+                        if (!disabled) handleToggle(key);
+                      }}
+                      disabled={disabled}
+                      title={
+                        disabled
+                          ? "Chỉ gửi email khi tạo bài mới với trạng thái Đăng ngay hoặc Lên lịch."
+                          : undefined
+                      }
+                      className={`flex w-full items-center justify-between rounded-[16px] border border-rose-100 bg-white px-4 py-3 text-left hover:border-rose-200 disabled:cursor-not-allowed disabled:opacity-55`}
                     >
+                      <span className="flex items-center gap-2.5 text-base text-[#6f5a5a]">
+                        <Icon className="h-4 w-4 text-[#aeb8c6]" />
+                        {label}
+                      </span>
                       <span
-                        className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${toggles[key] ? "translate-x-5" : "translate-x-1"}`}
-                      />
-                    </span>
-                  </button>
-                ))}
+                        className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${checked ? "bg-sage-300" : "bg-rose-100"}`}
+                      >
+                        <span
+                          className={`absolute top-[3px] h-[18px] w-[18px] rounded-full bg-white shadow-sm transition-transform duration-200 ${checked ? "translate-x-5" : "translate-x-1"}`}
+                        />
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </SidebarSection>
           </aside>
@@ -1106,10 +1617,12 @@ function WritePageContent() {
                     className="mb-8 aspect-video w-full rounded-[28px] object-cover shadow-[0_20px_60px_rgba(45,62,47,0.14)]"
                   />
                 )}
-                <article
-                  className="prose prose-rose max-w-none rounded-[28px] border border-white/90 bg-[#fffefd]/95 p-7 text-[#3a312f] shadow-[0_24px_70px_rgba(45,62,47,0.1)] md:p-10"
-                  dangerouslySetInnerHTML={{ __html: editor?.getHTML() ?? "" }}
-                />
+                <article className="max-w-none overflow-hidden rounded-[28px] border border-white/90 bg-[#fffefd]/95 p-7 text-[#3a312f] shadow-[0_24px_70px_rgba(45,62,47,0.1)] md:p-10">
+                  <RichPostContent
+                    contentJson={editor?.getJSON() ?? null}
+                    fallbackContent={toPlainPostContent(editor?.getJSON())}
+                  />
+                </article>
               </main>
             </div>
           </div>,
@@ -1117,6 +1630,96 @@ function WritePageContent() {
         )}
     </div>
   );
+}
+
+function validateImageFile(file: File) {
+  if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+    return "Vui lòng chọn ảnh JPG, PNG hoặc WEBP.";
+  }
+
+  if (file.size > 8 * 1024 * 1024) {
+    return "Ảnh không được quá 8MB.";
+  }
+
+  return null;
+}
+
+function getFirstImageFile(files: FileList | null | undefined) {
+  return Array.from(files ?? []).find((file) => file.type.startsWith("image/"));
+}
+
+function countWords(text: string) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function isTiptapDocument(value: unknown) {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    (value as { type?: unknown }).type === "doc",
+  );
+}
+
+function hasUnresolvedEditorImages(doc: unknown) {
+  let hasUnresolved = false;
+
+  function visit(node: unknown) {
+    if (hasUnresolved || !node || typeof node !== "object") return;
+
+    const item = node as {
+      type?: string;
+      attrs?: { src?: unknown; tempId?: unknown };
+      content?: unknown[];
+    };
+
+    if (item.type === "image") {
+      const src = typeof item.attrs?.src === "string" ? item.attrs.src : "";
+      if (
+        src.startsWith("blob:") ||
+        src.startsWith("data:image/") ||
+        typeof item.attrs?.tempId === "string"
+      ) {
+        hasUnresolved = true;
+        return;
+      }
+    }
+
+    for (const child of item.content ?? []) {
+      visit(child);
+    }
+  }
+
+  visit(doc);
+  return hasUnresolved;
+}
+
+function appendSubscriberNotificationMessage(
+  baseMessage: string,
+  notification: {
+    requested: boolean;
+    sent: number;
+    failed: number;
+    skippedReason?: string;
+  },
+) {
+  if (notification.sent > 0 && notification.failed === 0) {
+    return `${baseMessage} Đã gửi email cho ${notification.sent} subscriber.`;
+  }
+
+  if (notification.sent > 0) {
+    return `${baseMessage} Đã gửi email cho ${notification.sent} subscriber, ${notification.failed} email bị lỗi.`;
+  }
+
+  if (
+    notification.skippedReason ===
+    "Email will be sent when the scheduled post is published."
+  ) {
+    return `${baseMessage} Email thông báo sẽ được gửi đến subscriber khi bài viết được publish.`;
+  }
+
+  return `${baseMessage} Chưa gửi được email cho subscriber${
+    notification.skippedReason ? `: ${notification.skippedReason}` : "."
+  }`;
 }
 
 function validatePost({

@@ -1,7 +1,4 @@
-import {
-  BLOG_CATEGORIES,
-  getBlogCategoryLabel,
-} from "@/constants/categories";
+import { BLOG_CATEGORIES, getBlogCategoryLabel } from "@/constants/categories";
 import { createClient } from "@/lib/supabase/server";
 
 type PostStatus = "draft" | "scheduled" | "published";
@@ -21,11 +18,16 @@ export type BlogPostSummary = {
   tags: string[];
   readTime: string;
   commentCount: number;
+  allowComments: boolean;
+  isFeatured: boolean;
+  featuredAt: string | null;
+  thumbnailUrl: string | null;
   status?: PostStatus;
 };
 
 export type BlogPostDetail = BlogPostSummary & {
   content: string;
+  contentJson: unknown;
   paragraphs: string[];
   sections: Array<{
     heading: string;
@@ -44,9 +46,14 @@ type PostRow = {
   slug: string;
   summary: string | null;
   content: string | null;
+  content_json?: unknown;
+  thumbnail_url?: string | null;
   published_at: string | null;
   created_at: string | null;
   tags?: string[] | null;
+  allow_comments?: boolean | null;
+  is_featured?: boolean | null;
+  featured_at?: string | null;
   status?: string | null;
   categories: CategoryRow | CategoryRow[] | null;
 };
@@ -56,18 +63,28 @@ export async function getPublishedPosts(options?: {
   categorySlug?: string;
   orderBy?: "published_at" | "created_at";
   query?: string;
+  prioritizeFeatured?: boolean;
 }) {
   const supabase = createClient();
   const selectClause =
-    "id,title,slug,summary,content,published_at,created_at,tags,categories!inner(name,slug)";
+    "id,title,slug,summary,content,thumbnail_url,published_at,created_at,tags,allow_comments,is_featured,featured_at,categories!inner(name,slug)";
   const normalizedQuery = normalizeSearchQuery(options?.query);
+  const orderBy = options?.orderBy ?? "published_at";
+  const shouldPrioritizeFeatured = options?.prioritizeFeatured ?? true;
 
   let query = supabase
     .from("posts")
     .select(selectClause)
-    .in("status", ["published", "scheduled"])
-    .lte("published_at", new Date().toISOString())
-    .order(options?.orderBy ?? "published_at", { ascending: false });
+    .eq("status", "published")
+    .lte("published_at", new Date().toISOString());
+
+  if (shouldPrioritizeFeatured) {
+    query = query
+      .order("is_featured", { ascending: false })
+      .order("featured_at", { ascending: false, nullsFirst: false });
+  }
+
+  query = query.order(orderBy, { ascending: false });
 
   if (options?.categorySlug) {
     query = query.eq("categories.slug", options.categorySlug);
@@ -95,7 +112,11 @@ export async function getPublishedPosts(options?: {
 export async function getLatestPostsByCategorySlugs(categorySlugs: string[]) {
   const postsByCategory = await Promise.all(
     categorySlugs.map((categorySlug) =>
-      getPublishedPosts({ categorySlug, limit: 1 }),
+      getPublishedPosts({
+        categorySlug,
+        limit: 1,
+        prioritizeFeatured: false,
+      }),
     ),
   );
 
@@ -107,10 +128,10 @@ export async function getPostBySlug(slug: string) {
   const { data, error } = await supabase
     .from("posts")
     .select(
-      "id,title,slug,summary,content,published_at,created_at,tags,categories(name,slug)",
+      "id,title,slug,summary,content,content_json,thumbnail_url,published_at,created_at,tags,allow_comments,is_featured,featured_at,categories(name,slug)",
     )
     .eq("slug", slug)
-    .in("status", ["published", "scheduled"])
+    .eq("status", "published")
     .lte("published_at", new Date().toISOString())
     .maybeSingle();
 
@@ -143,13 +164,17 @@ export async function getCategoryOptions() {
   }));
 }
 
-export async function getAdminPosts(options?: { limit?: number; offset?: number }) {
+export async function getAdminPosts(options?: {
+  limit?: number;
+  offset?: number;
+}) {
   const supabase = createClient();
-  await publishDueScheduledPosts(supabase);
 
   let query = supabase
     .from("posts")
-    .select("id,title,slug,summary,content,published_at,created_at,status,tags,categories(name,slug)")
+    .select(
+      "id,title,slug,summary,content,thumbnail_url,published_at,created_at,status,tags,allow_comments,is_featured,featured_at,categories(name,slug)",
+    )
     .order("created_at", { ascending: false });
 
   if (options?.limit && typeof options.offset === "number") {
@@ -166,18 +191,6 @@ export async function getAdminPosts(options?: { limit?: number; offset?: number 
   }
 
   return attachCommentCounts((data ?? []) as PostRow[]);
-}
-
-async function publishDueScheduledPosts(supabase: ReturnType<typeof createClient>) {
-  const { error } = await supabase
-    .from("posts")
-    .update({ status: "published" })
-    .eq("status", "scheduled")
-    .lte("published_at", new Date().toISOString());
-
-  if (error) {
-    console.error("[posts.publishDueScheduled]", error);
-  }
 }
 
 async function attachCommentCounts(rows: PostRow[]) {
@@ -209,7 +222,7 @@ function toPostSummary(post: PostRow, commentCount: number): BlogPostSummary {
   const category = getSingleCategory(post.categories);
   const categorySlug = category?.slug ?? "life";
   const content = post.content ?? "";
-  const effectiveStatus = getEffectiveStatus(post.status, post.published_at);
+  const effectiveStatus = getEffectiveStatus(post.status);
 
   return {
     id: post.id,
@@ -224,6 +237,10 @@ function toPostSummary(post: PostRow, commentCount: number): BlogPostSummary {
     tags: post.tags ?? [],
     readTime: getReadTime(content),
     commentCount,
+    allowComments: post.allow_comments ?? true,
+    isFeatured: post.is_featured ?? false,
+    featuredAt: post.featured_at ?? null,
+    thumbnailUrl: post.thumbnail_url ?? null,
     status: effectiveStatus,
   };
 }
@@ -235,6 +252,7 @@ function toPostDetail(post: PostRow, commentCount: number): BlogPostDetail {
   return {
     ...summary,
     content,
+    contentJson: post.content_json ?? null,
     paragraphs: getIntroParagraphs(content),
     sections: getSections(content),
   };
@@ -277,13 +295,7 @@ function formatDateTime(value: string | null) {
   }).format(new Date(value));
 }
 
-function getEffectiveStatus(
-  status: string | null | undefined,
-  publishedAt: string | null,
-): PostStatus {
-  if (status === "scheduled" && publishedAt && new Date(publishedAt).getTime() <= Date.now()) {
-    return "published";
-  }
+function getEffectiveStatus(status: string | null | undefined): PostStatus {
   if (status === "scheduled") return "scheduled";
   if (status === "published") return "published";
   return "draft";
@@ -335,7 +347,8 @@ function normalizeSearchText(value: string) {
 
 function getIntroParagraphs(content: string) {
   const firstHeadingIndex = content.indexOf("\n## ");
-  const intro = firstHeadingIndex >= 0 ? content.slice(0, firstHeadingIndex) : content;
+  const intro =
+    firstHeadingIndex >= 0 ? content.slice(0, firstHeadingIndex) : content;
 
   return intro
     .split(/\n{2,}/)

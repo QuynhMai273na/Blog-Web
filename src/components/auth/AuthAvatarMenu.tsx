@@ -23,6 +23,7 @@ export default function AuthAvatarMenu() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
 
   async function loadProfile(userId: string) {
     const supabase = createClient();
@@ -76,6 +77,9 @@ export default function AuthAvatarMenu() {
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, []);
 
+  const avatarUrl = profile?.avatar_url ?? user?.user_metadata.avatar_url;
+  const canShowAvatar = Boolean(avatarUrl && failedAvatarUrl !== avatarUrl);
+
   const handleSignOut = async () => {
     setIsSigningOut(true);
     const { error } = await signOut();
@@ -115,7 +119,6 @@ export default function AuthAvatarMenu() {
     user.email ??
     "User";
   const email = profile?.email ?? user.email;
-  const avatarUrl = profile?.avatar_url ?? user.user_metadata.avatar_url;
   const isAdmin = profile?.app_role === "admin";
 
   return (
@@ -128,11 +131,13 @@ export default function AuthAvatarMenu() {
         aria-expanded={isOpen}
         aria-label="Mở menu tài khoản"
       >
-        {avatarUrl ? (
+        {canShowAvatar ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={avatarUrl}
             alt={displayName}
+            referrerPolicy="no-referrer"
+            onError={() => setFailedAvatarUrl(avatarUrl ?? null)}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -140,11 +145,12 @@ export default function AuthAvatarMenu() {
         )}
       </button>
 
-      {isOpen && (
-        <div
-          role="menu"
-          className="absolute right-0 top-11 z-50 w-56 overflow-hidden rounded-xl border border-[#ead9d3] bg-white py-2 text-left shadow-[0_12px_32px_rgba(74,44,42,0.16)]"
-        >
+      <div
+        role="menu"
+        className={`soft-panel absolute right-0 top-11 z-50 w-56 overflow-hidden rounded-xl border border-[#ead9d3] bg-white py-2 text-left shadow-[0_12px_32px_rgba(74,44,42,0.16)] ${
+          isOpen ? "soft-panel-open" : "soft-panel-closed"
+        }`}
+      >
           <div className="border-b border-[#f0e6e0] px-4 pb-3 pt-2">
             <p className="truncate font-sans text-sm font-semibold text-[#3a2520]">
               {displayName}
@@ -196,8 +202,7 @@ export default function AuthAvatarMenu() {
             <LogOut className="h-4 w-4" aria-hidden="true" />
             {isSigningOut ? "Đang đăng xuất..." : "Đăng xuất"}
           </button>
-        </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -2,6 +2,12 @@ import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 import { BLOG_CATEGORY_SLUGS, type BlogCategorySlug } from "@/constants/categories";
 import { createClient } from "@/lib/supabase/server";
+import {
+  deletePostAssetsForPost,
+  hasUnresolvedImageSources,
+  syncPostAssetsForPost,
+  type PostAssetRow,
+} from "@/services/post-assets.service";
 
 type PublishMode = "draft" | "scheduled" | "published";
 
@@ -12,9 +18,16 @@ type UpdatePostPayload = {
   category?: BlogCategorySlug;
   publishMode?: PublishMode;
   scheduledAt?: string | null;
-  coverImage?: string | null;
-  coverFileName?: string;
+  thumbnailUrl?: string | null;
+  coverAssetId?: string | null;
+  contentJson?: unknown;
+  uploadedAssetIds?: string[];
   tags?: string[];
+  options?: {
+    comments?: boolean;
+    featured?: boolean;
+    emailSubscribers?: boolean;
+  };
 };
 
 type RouteContext = {
@@ -29,7 +42,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const { data: post, error } = await auth.supabase
     .from("posts")
     .select(
-      "id,title,slug,summary,content,published_at,status,thumbnail_url,tags,categories(slug)",
+      "id,title,slug,summary,content,content_json,published_at,status,thumbnail_url,tags,allow_comments,is_featured,featured_at,categories(slug)",
     )
     .eq(isUuid(id) ? "id" : "slug", id)
     .maybeSingle();
@@ -43,7 +56,21 @@ export async function GET(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Không tìm thấy bài viết." }, { status: 404 });
   }
 
-  return NextResponse.json({ post });
+  const { data: assets, error: assetsError } = await auth.supabase
+    .from("post_assets")
+    .select("id,post_id,kind,storage_path,public_url,status,created_by,created_at")
+    .eq("post_id", post.id);
+
+  if (assetsError) {
+    console.error("[admin.posts.assets.get]", assetsError);
+  }
+
+  return NextResponse.json({
+    post: {
+      ...post,
+      assets: (assets ?? []) as PostAssetRow[],
+    },
+  });
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
@@ -78,7 +105,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const { data: currentPost } = await auth.supabase
     .from("posts")
-    .select("id,slug,thumbnail_url")
+    .select("id,slug,thumbnail_url,allow_comments,is_featured,featured_at")
     .eq(isUuid(id) ? "id" : "slug", id)
     .maybeSingle();
 
@@ -88,22 +115,32 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const status = getPostStatus(payload.publishMode);
   const tags = normalizeTags(payload.tags);
-  const thumbnailUrl = await uploadCoverImage({
-    supabase: auth.supabase,
-    slug: currentPost.slug,
-    coverImage: payload.coverImage,
-    coverFileName: payload.coverFileName,
-  });
+  const thumbnailUrl =
+    payload.thumbnailUrl === undefined
+      ? currentPost.thumbnail_url
+      : payload.thumbnailUrl;
+  const allowComments =
+    payload.options?.comments ?? currentPost.allow_comments ?? true;
+  const isFeatured = payload.options?.featured ?? currentPost.is_featured ?? false;
+  const featuredAt = isFeatured
+    ? currentPost.is_featured
+      ? (currentPost.featured_at ?? new Date().toISOString())
+      : new Date().toISOString()
+    : null;
 
   const { data: post, error: updateError } = await auth.supabase
     .from("posts")
     .update({
       title: payload.title!.trim(),
       content: payload.content!.trim(),
+      content_json: payload.contentJson ?? null,
       summary: payload.excerpt!.trim(),
       category_id: category.id,
-      thumbnail_url: thumbnailUrl ?? currentPost.thumbnail_url,
+      thumbnail_url: thumbnailUrl,
       tags,
+      allow_comments: allowComments,
+      is_featured: isFeatured,
+      featured_at: featuredAt,
       status,
       published_at:
         status === "published"
@@ -119,6 +156,22 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (updateError) {
     console.error("[admin.posts.update]", updateError);
     return NextResponse.json({ error: "Không thể cập nhật bài viết." }, { status: 500 });
+  }
+
+  const assetSync = await syncPostAssetsForPost({
+    supabase: auth.supabase,
+    postId: currentPost.id,
+    coverAssetId: payload.coverAssetId,
+    contentJson: payload.contentJson,
+    uploadedAssetIds: payload.uploadedAssetIds,
+    userId: auth.user.id,
+  });
+
+  if (assetSync.error) {
+    return NextResponse.json(
+      { error: "Bai viet da cap nhat nhung khong the dong bo anh." },
+      { status: 500 },
+    );
   }
 
   revalidatePostPaths(categorySlug, post.slug);
@@ -153,6 +206,14 @@ export async function DELETE(_request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Không tìm thấy bài viết." }, { status: 404 });
   }
 
+  const assetDelete = await deletePostAssetsForPost(auth.supabase, post.id);
+  if (assetDelete.error) {
+    return NextResponse.json(
+      { error: "Khong the xoa anh cua bai viet." },
+      { status: 500 },
+    );
+  }
+
   const { error } = await auth.supabase.from("posts").delete().eq("id", post.id);
 
   if (error) {
@@ -175,6 +236,7 @@ async function requireAdmin() {
   if (userError || !user) {
     return {
       supabase,
+      user: null,
       error: NextResponse.json({ error: "Vui lòng đăng nhập." }, { status: 401 }),
     };
   }
@@ -189,6 +251,7 @@ async function requireAdmin() {
     console.error("[admin.posts.auth]", profileError);
     return {
       supabase,
+      user,
       error: NextResponse.json(
         { error: "Không thể kiểm tra quyền admin." },
         { status: 500 },
@@ -199,6 +262,7 @@ async function requireAdmin() {
   if (profile?.app_role !== "admin") {
     return {
       supabase,
+      user,
       error: NextResponse.json(
         { error: "Chỉ admin mới được thao tác bài viết." },
         { status: 403 },
@@ -206,7 +270,7 @@ async function requireAdmin() {
     };
   }
 
-  return { supabase, error: null };
+  return { supabase, user, error: null };
 }
 
 function validatePayload(payload: UpdatePostPayload | null) {
@@ -214,6 +278,16 @@ function validatePayload(payload: UpdatePostPayload | null) {
   if (!payload.title?.trim()) return "Vui lòng nhập tiêu đề bài viết.";
   if (!payload.excerpt?.trim()) return "Vui lòng nhập tóm tắt bài viết.";
   if (!payload.content?.trim()) return "Vui lòng nhập nội dung bài viết.";
+  if (hasUnresolvedImageSources(payload.contentJson)) {
+    return "Vui long doi anh tai len xong truoc khi luu.";
+  }
+  if (
+    typeof payload.thumbnailUrl === "string" &&
+    (payload.thumbnailUrl.startsWith("data:image/") ||
+      payload.thumbnailUrl.startsWith("blob:"))
+  ) {
+    return "Anh bia chua tai len xong.";
+  }
   if (payload.category && !BLOG_CATEGORY_SLUGS.includes(payload.category)) {
     return "Danh mục không hợp lệ.";
   }
@@ -247,54 +321,6 @@ function revalidatePostPaths(categorySlug: string, slug: string) {
   revalidatePath("/dashboard");
   revalidatePath(`/posts/${slug}`);
   revalidatePath(`/category/${categorySlug}`);
-}
-
-async function uploadCoverImage({
-  supabase,
-  slug,
-  coverImage,
-  coverFileName,
-}: {
-  supabase: ReturnType<typeof createClient>;
-  slug: string;
-  coverImage?: string | null;
-  coverFileName?: string;
-}) {
-  if (!coverImage?.startsWith("data:image/")) return null;
-
-  const match = coverImage.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
-  if (!match) return null;
-
-  const [, contentType, base64] = match;
-  const extension = getImageExtension(contentType, coverFileName);
-  const bytes = Uint8Array.from(Buffer.from(base64, "base64"));
-  const path = `${slug}-${Date.now()}.${extension}`;
-
-  const { error } = await supabase.storage
-    .from("post-covers")
-    .upload(path, bytes, {
-      contentType,
-      upsert: false,
-    });
-
-  if (error) {
-    console.error("[admin.posts.cover.update]", error);
-    return null;
-  }
-
-  const { data } = supabase.storage.from("post-covers").getPublicUrl(path);
-  return data.publicUrl;
-}
-
-function getImageExtension(contentType: string, fileName?: string) {
-  const existingExtension = fileName?.split(".").pop()?.toLowerCase();
-  if (existingExtension && ["jpg", "jpeg", "png", "webp"].includes(existingExtension)) {
-    return existingExtension === "jpeg" ? "jpg" : existingExtension;
-  }
-
-  if (contentType === "image/png") return "png";
-  if (contentType === "image/webp") return "webp";
-  return "jpg";
 }
 
 function isUuid(value: string) {

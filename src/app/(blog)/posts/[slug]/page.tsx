@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { getPostBySlug, getRelatedPosts } from "@/services/post.service";
 import { BuyMeCoffeeCard } from "@/components/blog/BuyMeCoffeeCard";
 import { CommentSection } from "@/components/blog/CommentSection";
+import { RichPostContent } from "@/components/blog/RichPostContent";
 import { PostActions } from "@/components/dashboard/PostActions";
 import { SubscribeForm } from "@/components/forms/SubscribeForm";
 import { createClient } from "@/lib/supabase/server";
@@ -93,6 +94,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                 postId={post.id}
                 slug={post.slug}
                 canView={false}
+                isFeatured={post.isFeatured}
                 redirectAfterDelete="/posts"
                 className="mt-6 items-center"
               />
@@ -110,28 +112,20 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
             />
 
             <div className="relative">
-              {post.paragraphs.map((paragraph) => (
-                <p key={paragraph} className="mb-5 text-base text-[#6a5555] ">
-                  {paragraph}
-                </p>
-              ))}
+              {post.thumbnailUrl && (
+                <img
+                  src={post.thumbnailUrl}
+                  alt=""
+                  className="mb-8 aspect-video w-full rounded-[28px] object-cover shadow-[0_20px_60px_rgba(45,62,47,0.14)]"
+                />
+              )}
 
-              <blockquote className="mt-8 rounded-[24px] border-l-4 border-rose-300 bg-gradient-to-r from-rose-50 to-rose-50/35 px-6 py-5 font-serif text-lg italic tracking-normal text-[#9a6570] ">
-                {post.excerpt}
-              </blockquote>
+              <PostExcerpt excerpt={post.excerpt} />
 
-              <div className="mt-10 space-y-10">
-                {post.sections.map((section) => (
-                  <section key={section.heading}>
-                    <h2 className="font-sans text-lg font-semibold  text-text_primary">
-                      {section.heading}
-                    </h2>
-                    <p className="mt-3 whitespace-pre-line text-base  text-text_secondary">
-                      {section.body}
-                    </p>
-                  </section>
-                ))}
-              </div>
+              <RichPostContent
+                contentJson={post.contentJson}
+                fallbackContent={post.content}
+              />
 
               <div className="mt-4 border-t border-rose-100/80 pt-6 text-[15px] leading-7 text-[#8a7a7a] md:text-base">
                 <span>Filed Under: </span>
@@ -146,6 +140,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
               <CommentSection
                 postId={post.id}
                 initialCount={post.commentCount}
+                allowComments={post.allowComments}
               />
             </div>
           </article>
@@ -256,6 +251,14 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
         </div>
       </section>
     </div>
+  );
+}
+
+function PostExcerpt({ excerpt }: { excerpt: string }) {
+  return (
+    <blockquote className="mb-8 rounded-[24px] border-l-4 border-rose-300 bg-gradient-to-r from-rose-50 to-rose-50/35 px-6 py-5 font-serif text-lg italic tracking-normal text-[#9a6570]">
+      {excerpt}
+    </blockquote>
   );
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
@@ -16,9 +16,11 @@ type Comment = {
 export function CommentSection({
   postId,
   initialCount,
+  allowComments = true,
 }: {
   postId: string;
   initialCount: number;
+  allowComments?: boolean;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -27,6 +29,22 @@ export function CommentSection({
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const loadComments = useCallback(async () => {
+    const { data, error: loadError } = await supabase
+      .from("comments")
+      .select("id,user_id,body,created_at,profiles(display_name,avatar_url)")
+      .eq("post_id", postId)
+      .order("created_at", { ascending: true });
+
+    if (loadError) {
+      console.error("[comments.load]", loadError);
+      setError("Khong the tai binh luan.");
+      return;
+    }
+
+    setComments(((data ?? []) as CommentRow[]).map(toComment));
+  }, [postId, supabase]);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
@@ -56,6 +74,28 @@ export function CommentSection({
         setIsLoading(false);
       });
   }, [postId, supabase]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel(`comments:${postId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "comments",
+          filter: `post_id=eq.${postId}`,
+        },
+        () => {
+          void loadComments();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [loadComments, postId, supabase]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -173,7 +213,13 @@ export function CommentSection({
         )}
       </div>
 
-      {user ? (
+      {!allowComments && (
+        <p className="mt-6 rounded-[18px] border border-sand-200 bg-[#fcf5ea] px-4 py-3 text-sm text-[#8a7474]">
+          Bình luận đang được tắt cho bài viết này.
+        </p>
+      )}
+
+      {allowComments && user ? (
         <form onSubmit={handleSubmit} className="mt-6">
           <textarea
             value={body}
@@ -193,7 +239,7 @@ export function CommentSection({
             {isSubmitting ? "Đang gửi..." : "Gửi bình luận"}
           </button>
         </form>
-      ) : (
+      ) : allowComments ? (
         <p className="mt-6 text-sm text-[#8a6070]">
           <Link
             href="/login"
@@ -203,7 +249,7 @@ export function CommentSection({
           </Link>{" "}
           để bình luận.
         </p>
-      )}
+      ) : null}
     </section>
   );
 }

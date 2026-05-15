@@ -24,13 +24,20 @@ CREATE TABLE posts (
   title text NOT NULL,
   slug text UNIQUE NOT NULL,
   content text,
+  content_json jsonb,
   published_at timestamptz,
   created_at timestamptz DEFAULT now(),
   category_id uuid REFERENCES categories(id) ON DELETE SET NULL,
   thumbnail_url text,
   summary text,
   status text DEFAULT 'draft',
-  tags text[] NOT NULL DEFAULT '{}'
+  tags text[] NOT NULL DEFAULT '{}',
+  allow_comments boolean NOT NULL DEFAULT true,
+  is_featured boolean NOT NULL DEFAULT false,
+  featured_at timestamptz,
+  notify_subscribers_on_publish boolean NOT NULL DEFAULT false,
+  subscriber_notified_at timestamptz,
+  subscriber_notification_error text
 );
 
 CREATE TABLE comments (
@@ -41,6 +48,21 @@ CREATE TABLE comments (
   created_at timestamptz DEFAULT now(),
   is_approved boolean DEFAULT false
 );
+
+CREATE TABLE post_assets (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  post_id uuid REFERENCES posts(id) ON DELETE CASCADE,
+  kind text NOT NULL CHECK (kind IN ('cover', 'inline')),
+  storage_path text NOT NULL UNIQUE,
+  public_url text NOT NULL,
+  status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'attached')),
+  created_by uuid REFERENCES profiles(id) ON DELETE SET NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+CREATE INDEX post_assets_post_id_idx ON post_assets(post_id);
+CREATE INDEX post_assets_created_by_idx ON post_assets(created_by);
+CREATE INDEX post_assets_status_idx ON post_assets(status);
 
 CREATE TABLE subscribers (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -61,6 +83,7 @@ CREATE TABLE contacts (
 ALTER TABLE posts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE post_assets ENABLE ROW LEVEL SECURITY;
 ALTER TABLE subscribers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contacts ENABLE ROW LEVEL SECURITY;
@@ -69,13 +92,25 @@ CREATE POLICY "public read posts"
   ON posts FOR SELECT
   USING (true);
 
+CREATE INDEX posts_featured_order_idx ON posts (is_featured DESC, featured_at DESC, published_at DESC);
+CREATE INDEX posts_scheduled_notification_idx
+  ON posts (status, published_at, notify_subscribers_on_publish, subscriber_notified_at);
+
 CREATE POLICY "read all comments"
   ON comments FOR SELECT
   USING (true);
 
 CREATE POLICY "login to comment"
   ON comments FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK (
+    auth.uid() = user_id
+    AND EXISTS (
+      SELECT 1
+      FROM posts
+      WHERE posts.id = post_id
+        AND posts.allow_comments = true
+    )
+  );
 
 CREATE POLICY "delete own comment"
   ON comments FOR DELETE
@@ -92,6 +127,25 @@ CREATE POLICY "update own profile"
 CREATE POLICY "insert own profile"
   ON profiles FOR INSERT
   WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "admin manage post assets"
+  ON post_assets FOR ALL
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.app_role = 'admin'
+    )
+  )
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM profiles
+      WHERE profiles.id = auth.uid()
+        AND profiles.app_role = 'admin'
+    )
+  );
 
 CREATE POLICY "insert subscriber"
   ON subscribers FOR INSERT
