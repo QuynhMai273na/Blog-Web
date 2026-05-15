@@ -4,6 +4,7 @@ import {
   getBlogCategoryLabel,
   getBlogCategoryStyle,
 } from "@/constants/categories";
+import AutoRefresh from "@/components/common/AutoRefresh";
 import { Pagination } from "@/components/ui/Pagination";
 import { getPublishedPosts } from "@/services/post.service";
 
@@ -41,6 +42,7 @@ export default async function CategoryPage({
 
   return (
     <div className="flex min-h-full flex-1 w-full flex-col pb-4">
+      <AutoRefresh intervalMs={60000} />
       <section
         className="relative min-h-[160px] w-full overflow-hidden border-b border-[#f1ddd8] bg-cover bg-center px-6 py-8 md:min-h-[200px] md:py-11"
         style={{ backgroundImage: `url(${pageCategoryStyle.heroImage})` }}

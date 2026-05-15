@@ -87,37 +87,37 @@ export default function CustomSelect({
         />
       </button>
 
-      {open ? (
-        <div
-          id={listboxId}
-          role="listbox"
-          aria-labelledby={buttonId}
-          className={cn(
-            "absolute left-0 top-full z-[80] mt-2 w-full overflow-hidden rounded-[20px] border border-rose-100 bg-white shadow-[0_16px_40px_rgba(214,156,161,0.22)] ring-1 ring-rose-50",
-            panelClassName,
-          )}
-        >
-          {options.map((option) => {
-            const isSelected = option.value === currentValue;
+      <div
+        id={listboxId}
+        role="listbox"
+        aria-labelledby={buttonId}
+        className={cn(
+          "soft-panel absolute left-0 top-full z-[80] mt-2 w-full overflow-hidden rounded-[20px] border border-rose-100 bg-white shadow-[0_16px_40px_rgba(214,156,161,0.22)] ring-1 ring-rose-50",
+          open ? "soft-panel-open" : "soft-panel-closed",
+          panelClassName,
+        )}
+      >
+        {options.map((option) => {
+          const isSelected = option.value === currentValue;
 
-            return (
-              <button
-                key={option.value}
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                onClick={() => handleSelect(option.value)}
-                className="flex w-full items-center justify-between px-5 py-3.5 text-left text-[14px] font-medium text-[#5a4545] transition-colors duration-150 hover:bg-rose-50 hover:text-rose-400"
-              >
-                <span>{option.label}</span>
-                {isSelected ? (
-                  <Check className="h-4 w-4 flex-none text-rose-300" />
-                ) : null}
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="option"
+              aria-selected={isSelected}
+              tabIndex={open ? 0 : -1}
+              onClick={() => handleSelect(option.value)}
+              className="flex w-full items-center justify-between px-5 py-3.5 text-left text-[14px] font-medium text-[#5a4545] transition-colors duration-150 hover:bg-rose-50 hover:text-rose-400"
+            >
+              <span>{option.label}</span>
+              {isSelected ? (
+                <Check className="h-4 w-4 flex-none text-rose-300" />
+              ) : null}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

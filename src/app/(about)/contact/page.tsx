@@ -42,7 +42,7 @@ const socials = [
 
 export default function ContactPage() {
   return (
-    <div className="relative isolate px-4 py-10 md:px-6 md:py-14 animate-bloom">
+    <div className="relative isolate px-3 py-8 animate-bloom sm:px-4 sm:py-10 md:px-6 md:py-14">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(252,228,230,0.72),transparent_35%),radial-gradient(circle_at_top_right,rgba(209,231,221,0.42),transparent_30%),linear-gradient(180deg,#fcfaf5_0%,#f8f5ed_48%,#fdfbf7_100%)]"
@@ -106,10 +106,10 @@ export default function ContactPage() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.02fr_0.98fr]">
-          <aside className="relative overflow-hidden rounded-[36px] border border-white/90 bg-[#fffdfb]/95 p-7 shadow-[0_30px_90px_rgba(45,62,47,0.12),0_10px_30px_rgba(214,156,161,0.12)] ring-1 ring-rose-100/80 backdrop-blur-md animate-bloom [animation-delay:220ms] [animation-fill-mode:both] md:p-10">
+          <aside className="relative overflow-hidden rounded-[28px] border border-white/90 bg-[#fffdfb]/95 p-5 shadow-[0_30px_90px_rgba(45,62,47,0.12),0_10px_30px_rgba(214,156,161,0.12)] ring-1 ring-rose-100/80 backdrop-blur-md animate-bloom [animation-delay:220ms] [animation-fill-mode:both] sm:p-7 md:rounded-[36px] md:p-10">
             <div
               aria-hidden
-              className="absolute inset-0 rounded-[36px] bg-gradient-to-br from-white/80 via-transparent to-rose-50/40"
+              className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-white/80 via-transparent to-rose-50/40 md:rounded-[36px]"
             />
             <div
               aria-hidden
@@ -117,12 +117,12 @@ export default function ContactPage() {
             />
 
             <div className="relative">
-              <div className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-[13px] font-medium text-rose-400 shadow-sm">
+              <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-2 text-[12px] font-medium text-rose-400 shadow-sm sm:px-4 sm:text-[13px]">
                 <MessageCircleHeart className="h-4 w-4" />
                 Một góc nhỏ để kết nối
               </div>
 
-              <h2 className="mt-6 font-serif text-3xl tracking-[1px] font-normal text-text_primary sm:text-2xl">
+              <h2 className="mt-6 font-serif text-[28px] font-normal leading-tight tracking-[1px] text-text_primary sm:text-3xl">
                 Nói chuyện với mình nhé
               </h2>
               <p className="mt-5 max-w-xl text-sm text-text_secondary">
@@ -131,19 +131,19 @@ export default function ContactPage() {
                 giản là kể cho mình nghe hôm nay của bạn đang nở hoa thế nào.
               </p>
 
-              <div className="mt-8 space-y-4">
+              <div className="mt-8 space-y-3 sm:space-y-4">
                 {contactMethods.map(({ icon: Icon, label, value, href }) => {
                   const content = (
-                    <div className="group flex items-center gap-4 rounded-[22px] border border-rose-100 bg-white/80 px-4 py-4 shadow-[0_4px_12px_rgba(214,156,161,0.10)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(214,156,161,0.18)]">
+                    <div className="group flex min-w-0 items-start gap-3 rounded-[20px] border border-rose-100 bg-white/80 px-3 py-3.5 shadow-[0_4px_12px_rgba(214,156,161,0.10)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(214,156,161,0.18)] sm:items-center sm:gap-4 sm:rounded-[22px] sm:px-4 sm:py-4">
                       {" "}
-                      <div className="flex h-14 w-14 flex-none items-center justify-center rounded-2xl border border-rose-100 bg-gradient-to-br from-white to-rose-50 text-rose-300 shadow-sm">
+                      <div className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl border border-rose-100 bg-gradient-to-br from-white to-rose-50 text-rose-300 shadow-sm sm:h-14 sm:w-14">
                         <Icon className="h-5 w-5" />
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <p className="text-[11px] uppercase tracking-[0.2em] text-sage-800/55">
                           {label}
                         </p>
-                        <p className="mt-1 text-[15px] font-semibold text-[#5b4242]">
+                        <p className="mt-1 break-words text-sm font-semibold leading-6 text-[#5b4242] [overflow-wrap:anywhere] sm:text-[15px]">
                           {value}
                         </p>
                       </div>
@@ -164,7 +164,7 @@ export default function ContactPage() {
                           ? "noopener noreferrer"
                           : undefined
                       }
-                      className="block rounded-[28px] focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200"
+                      className="block min-w-0 rounded-[24px] focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-200 sm:rounded-[28px]"
                     >
                       {content}
                     </Link>
@@ -174,7 +174,7 @@ export default function ContactPage() {
 
               <div className="my-8 h-px bg-gradient-to-r from-rose-100 via-rose-200/70 to-transparent" />
 
-              <div className="rounded-[30px] border border-rose-200/80 bg-gradient-to-br from-[#fffdf9] to-[#fff6f7] p-6 shadow-[0_14px_40px_rgba(214,156,161,0.08)]">
+              <div className="rounded-[24px] border border-rose-200/80 bg-gradient-to-br from-[#fffdf9] to-[#fff6f7] p-5 shadow-[0_14px_40px_rgba(214,156,161,0.08)] sm:rounded-[30px] sm:p-6">
                 <p className=" text-base font-semibold  text-[#7f6666]">
                   Mình cũng có mặt ở đây:
                 </p>
@@ -196,10 +196,10 @@ export default function ContactPage() {
             </div>
           </aside>
 
-          <div className="relative overflow-hidden rounded-[36px] border border-white/90 bg-[#fffefd]/95 p-7 shadow-[0_30px_90px_rgba(45,62,47,0.12),0_10px_28px_rgba(168,198,159,0.12)] ring-1 ring-sage-100/80 backdrop-blur-md animate-bloom [animation-delay:320ms] [animation-fill-mode:both] md:p-10">
+          <div className="relative overflow-hidden rounded-[28px] border border-white/90 bg-[#fffefd]/95 p-5 shadow-[0_30px_90px_rgba(45,62,47,0.12),0_10px_28px_rgba(168,198,159,0.12)] ring-1 ring-sage-100/80 backdrop-blur-md animate-bloom [animation-delay:320ms] [animation-fill-mode:both] sm:p-7 md:rounded-[36px] md:p-10">
             <div
               aria-hidden
-              className="absolute inset-0 rounded-[36px] bg-gradient-to-br from-white/85 via-transparent to-sage-50/45"
+              className="absolute inset-0 rounded-[28px] bg-gradient-to-br from-white/85 via-transparent to-sage-50/45 md:rounded-[36px]"
             />
             <div
               aria-hidden
@@ -207,7 +207,7 @@ export default function ContactPage() {
             />
 
             <div className="relative">
-              <h2 className="font-serif text-3xl font-normal tracking-[1px] text-text_primary sm:text-2xl">
+              <h2 className="font-serif text-[28px] font-normal leading-tight tracking-[1px] text-text_primary sm:text-3xl">
                 Gửi tin nhắn
               </h2>
               <p className="mt-3 max-w-lg text-sm text-text_secondary">

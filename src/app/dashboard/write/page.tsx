@@ -204,12 +204,12 @@ function ActionButtons({
   onPublish: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
       <button
         type="button"
         onClick={onCancel}
         disabled={isSaving !== null}
-        className="rounded-full border border-rose-100 bg-white px-4 py-2 text-sm font-medium text-[#9a6570] transition-all duration-200 hover:border-rose-200 hover:bg-rose-50"
+        className="flex-1 rounded-full border border-rose-100 bg-white px-4 py-2 text-sm font-medium text-[#9a6570] transition-all duration-200 hover:border-rose-200 hover:bg-rose-50 sm:flex-none"
       >
         Hủy
       </button>
@@ -218,7 +218,7 @@ function ActionButtons({
           type="button"
           onClick={onDraft}
           disabled={disabled || isSaving !== null}
-          className="rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-[#8a6b6b] transition-all duration-200 hover:border-rose-300 hover:bg-rose-50"
+          className="flex-1 rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-[#8a6b6b] transition-all duration-200 hover:border-rose-300 hover:bg-rose-50 sm:flex-none"
         >
           {isSaving === "draft" ? "Đang lưu..." : "Lưu nháp"}
         </button>
@@ -227,7 +227,7 @@ function ActionButtons({
         type="button"
         onClick={onPreview}
         disabled={disabled}
-        className="rounded-full border border-sage-100 bg-sage-50 px-4 py-2 text-sm font-medium text-[#64806f] transition-all duration-200 hover:border-sage-300 hover:bg-white"
+        className="flex-1 rounded-full border border-sage-100 bg-sage-50 px-4 py-2 text-sm font-medium text-[#64806f] transition-all duration-200 hover:border-sage-300 hover:bg-white sm:flex-none"
       >
         Xem trước
       </button>
@@ -235,7 +235,7 @@ function ActionButtons({
         type="button"
         onClick={onPublish}
         disabled={disabled || isSaving !== null}
-        className="rounded-full bg-sage-300 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(168,198,159,0.32)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-sage-800"
+        className="flex-1 rounded-full bg-sage-300 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(168,198,159,0.32)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-sage-800 sm:flex-none"
       >
         {isSaving === "publish"
           ? "Đang lưu..."
@@ -287,11 +287,17 @@ function SidebarSection({
           ▾
         </span>
       </button>
-      {open && (
-        <div className="border-t border-rose-100/60 px-5 pb-5 pt-4">
-          {children}
+      <div
+        className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[var(--ease-out-soft)] ${
+          open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="border-t border-rose-100/60 px-5 pb-5 pt-4">
+            {children}
+          </div>
         </div>
-      )}
+      </div>
     </section>
   );
 }
@@ -976,15 +982,15 @@ function WritePageContent() {
   return (
     <div className={` ${editorPageBackground}`}>
       {/* ── page header ── */}
-      <header className="relative flex items-start justify-between bg-white/80 px-6 py-8 shadow-[0_24px_70px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
+      <header className="relative grid gap-4 bg-white/80 px-4 py-6 shadow-[0_24px_70px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md md:px-6 lg:grid-cols-[1fr_minmax(0,2fr)_1fr] lg:items-start lg:py-8">
         <div>
           <p className="text-[12px] font-semibold uppercase tracking-[0.32em] text-sage-300">
             Dashboard / Editor
           </p>
         </div>
 
-        <div className="absolute left-1/2 top-6 w-full max-w-2xl -translate-x-1/2 text-center px-4">
-          <h1 className="mt-3 font-serif text-3xl font-normal leading-[1.4] tracking-normal text-text_black md:text-[40px]">
+        <div className="w-full max-w-2xl text-left lg:mx-auto lg:text-center">
+          <h1 className="font-serif text-3xl font-normal leading-[1.4] tracking-normal text-text_black md:text-[40px]">
             {editingPostId ? "Sửa bài viết" : "Viết bài mới"}
           </h1>
           <p className="mt-2 text-base text-[#7f6d6d]">
@@ -994,7 +1000,7 @@ function WritePageContent() {
           </p>
         </div>
 
-        <div className="rounded-[24px] border border-sage-100 bg-sage-50/80 px-5 py-4 shadow-sm">
+        <div className="rounded-[24px] border border-sage-100 bg-sage-50/80 px-5 py-4 shadow-sm lg:justify-self-end">
           <p className="font-medium text-base text-[#64806f]">
             Chỉnh sửa lần cuối
           </p>
@@ -1011,12 +1017,12 @@ function WritePageContent() {
       </header>
 
       {/* ── Main scrollable area ── */}
-      <div className="mx-auto max-w-[1440px] px-4 py-6 md:px-6">
+      <div className="mx-auto max-w-[1440px] px-3 py-4 sm:px-4 md:px-6 md:py-6">
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
           {/* ── Left: writing area ── */}
-          <div className="space-y-5 pr-2">
+          <div className="min-w-0 space-y-5 xl:pr-2">
             {/* Toolbar */}
-            <div className="sticky top-0 z-30 rounded-[26px] border border-white/90 bg-white/95 px-4 py-3 shadow-[0_8px_30px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md">
+            <div className="sticky top-0 z-30 rounded-[22px] border border-white/90 bg-white/95 px-3 py-3 shadow-[0_8px_30px_rgba(45,62,47,0.08)] ring-1 ring-rose-100/70 backdrop-blur-md md:rounded-[26px] md:px-4">
               <input
                 ref={inlineFileInputRef}
                 type="file"
@@ -1027,7 +1033,7 @@ function WritePageContent() {
                   event.target.value = "";
                 }}
               />
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible md:pb-0">
                 <ToolbarBtn
                   label="H2"
                   icon={Heading2}
@@ -1131,9 +1137,9 @@ function WritePageContent() {
             </div>
 
             {/* Card chính — Title + Excerpt + Editor */}
-            <div className="overflow-hidden rounded-[34px] border border-white/90 bg-[#fffefd]/95 shadow-[0_24px_70px_rgba(45,62,47,0.1)] ring-1 ring-rose-100/70 backdrop-blur-md">
+            <div className="overflow-hidden rounded-[24px] border border-white/90 bg-[#fffefd]/95 shadow-[0_24px_70px_rgba(45,62,47,0.1)] ring-1 ring-rose-100/70 backdrop-blur-md md:rounded-[34px]">
               {/* Title */}
-              <div className="px-7 pt-7 md:px-10 md:pt-10">
+              <div className="px-5 pt-6 md:px-10 md:pt-10">
                 <label
                   htmlFor="title"
                   className="text-base font-semibold uppercase tracking-[0.2em] text-text_secondary"
@@ -1150,10 +1156,10 @@ function WritePageContent() {
                 />
               </div>
 
-              <div className="mx-7 my-6 h-px bg-gradient-to-r from-rose-100 via-rose-200/60 to-transparent md:mx-10" />
+              <div className="mx-5 my-5 h-px bg-gradient-to-r from-rose-100 via-rose-200/60 to-transparent md:mx-10 md:my-6" />
 
               {/* Excerpt */}
-              <div className="px-7 md:px-10">
+              <div className="px-5 md:px-10">
                 <label
                   htmlFor="excerpt"
                   className="text-base font-semibold uppercase tracking-[0.2em] text-text_secondary"
@@ -1169,11 +1175,11 @@ function WritePageContent() {
                 />
               </div>
 
-              <div className="mx-7 my-6 h-px bg-gradient-to-r from-rose-100 via-rose-200/60 to-transparent md:mx-10" />
+              <div className="mx-5 my-5 h-px bg-gradient-to-r from-rose-100 via-rose-200/60 to-transparent md:mx-10 md:my-6" />
 
               {/* Tiptap editor */}
               <div className="bg-[#fdfcfb] border-t border-rose-100/60">
-                <div className="flex items-center justify-between px-7 py-4 md:px-10">
+                <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between md:px-10">
                   <div>
                     <p className="text-base font-semibold uppercase tracking-[0.2em] text-text_secondary">
                       Nội dung chính
@@ -1188,16 +1194,17 @@ function WritePageContent() {
                       : `${wordCount} từ · ~${readTime} phút`}
                   </div>
                 </div>
-                <div className="px-7 pb-7 md:px-10 md:pb-10">
+                <div className="px-4 pb-5 md:px-10 md:pb-10">
                   <div
-                    className="max-h-[640px] min-h-[520px] cursor-text overflow-y-auto overscroll-contain rounded-[20px] border border-rose-100 bg-white px-6 py-5 shadow-[inset_0_2px_8px_rgba(180,140,140,0.06),0_2px_12px_rgba(180,140,140,0.08)] transition-shadow duration-200 hover:shadow-[inset_0_2px_8px_rgba(180,140,140,0.08),0_6px_20px_rgba(180,140,140,0.14)] focus-within:border-rose-200 focus-within:shadow-[inset_0_2px_8px_rgba(180,140,140,0.08),0_6px_24px_rgba(214,156,161,0.18)]"
+                    className="max-h-[640px] min-h-[360px] cursor-text overflow-y-auto overscroll-contain rounded-[20px] border border-rose-100 bg-white px-4 py-4 shadow-[inset_0_2px_8px_rgba(180,140,140,0.06),0_2px_12px_rgba(180,140,140,0.08)] transition-shadow duration-200 hover:shadow-[inset_0_2px_8px_rgba(180,140,140,0.08),0_6px_20px_rgba(180,140,140,0.14)] focus-within:border-rose-200 focus-within:shadow-[inset_0_2px_8px_rgba(180,140,140,0.08),0_6px_24px_rgba(214,156,161,0.18)] md:min-h-[520px] md:px-6 md:py-5"
                     onClick={() => editor?.commands.focus()}
                   >
                     <EditorContent
                       editor={editor}
                       className="
                         [&_.ProseMirror]:outline-none
-                        [&_.ProseMirror]:min-h-[480px]
+                        [&_.ProseMirror]:min-h-[320px]
+                        md:[&_.ProseMirror]:min-h-[480px]
                         [&_.ProseMirror]:text-[#3a312f]
                         [&_.ProseMirror]:leading-[2]
                         [&_.ProseMirror]:break-words
@@ -1256,7 +1263,7 @@ function WritePageContent() {
             </div>
 
             {/* Bottom action bar */}
-            <div className="flex items-center justify-between rounded-[28px] border border-white/80 bg-white/80 px-5 py-4 shadow-[0_12px_36px_rgba(45,62,47,0.06)] backdrop-blur-md">
+            <div className="flex flex-col gap-4 rounded-[24px] border border-white/80 bg-white/80 px-4 py-4 shadow-[0_12px_36px_rgba(45,62,47,0.06)] backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:px-5 md:rounded-[28px]">
               <div className="min-w-0">
                 {notice ? (
                   <p
@@ -1293,7 +1300,7 @@ function WritePageContent() {
           </div>
 
           {/* ── Right sidebar ── */}
-          <aside className="space-y-3">
+          <aside className="space-y-3 xl:sticky xl:top-4 xl:self-start">
             <SidebarSection
               id="publish"
               icon={CalendarDays}

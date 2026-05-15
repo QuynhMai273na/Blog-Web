@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Search } from "lucide-react";
+import AutoRefresh from "@/components/common/AutoRefresh";
 import { PostActions } from "@/components/dashboard/PostActions";
 import CustomSelect from "@/components/ui/CustomSelect";
 import { Pagination } from "@/components/ui/Pagination";
@@ -46,6 +47,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
 
   return (
     <div className="flex min-h-full flex-1 w-full flex-col pb-4">
+      <AutoRefresh intervalMs={60000} />
       <section className="w-full border-b border-[#f1ddd8] bg-[#fff5f6] px-6 py-10">
         <div className="mx-auto max-w-5xl text-center">
           <h1 className="mb-3 font-serif text-3xl font-normal leading-[1.4] tracking-normal text-text_primary md:text-[40px]">

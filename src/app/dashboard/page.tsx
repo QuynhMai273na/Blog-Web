@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import AutoRefresh from "@/components/common/AutoRefresh";
 import { PostActions } from "@/components/dashboard/PostActions";
 import { Pagination } from "@/components/ui/Pagination";
 import { createClient } from "@/lib/supabase/server";
@@ -93,56 +94,57 @@ export default async function DashboardPage({
   ];
 
   return (
-    <div className="flex h-full w-full overflow-hidden bg-cream">
-      <aside className="flex h-full w-[240px] shrink-0 flex-col overflow-hidden bg-[#3e2829] pt-10 text-[#b09090]">
-        <div className="mb-10 px-8">
-          <h1 className="font-serif text-[22px] leading-tight">
+    <div className="flex min-h-full w-full flex-col overflow-y-auto bg-cream lg:h-full lg:flex-row lg:overflow-hidden">
+      <AutoRefresh intervalMs={30000} />
+      <aside className="flex w-full shrink-0 flex-col bg-[#3e2829] px-4 py-4 text-[#b09090] lg:h-full lg:w-[240px] lg:overflow-hidden lg:px-0 lg:pt-10">
+        <div className="mb-4 px-2 lg:mb-10 lg:px-8">
+          <h1 className="truncate font-serif text-[20px] leading-tight lg:text-[22px]">
             <span className="text-[#d96e83] ">
               {user.user_metadata.full_name}
             </span>
           </h1>
         </div>
 
-        <nav className="flex flex-col gap-2 px-4">
+        <nav className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:px-4">
           <Link
             href="/dashboard"
-            className="rounded-lg bg-[#4d3637] px-4 py-2.5 text-sm font-medium text-white transition-colors"
+            className="whitespace-nowrap rounded-lg bg-[#4d3637] px-4 py-2.5 text-sm font-medium text-white transition-colors"
           >
             Dashboard
           </Link>
           <Link
             href="/dashboard/write"
-            className="rounded-lg px-4 py-2.5 text-sm font-medium transition-colors hover:bg-[#4d3637] hover:text-white"
+            className="whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium transition-colors hover:bg-[#4d3637] hover:text-white"
           >
             Viết bài
           </Link>
           <Link
             href="/posts"
-            className="rounded-lg px-4 py-2.5 text-sm font-medium transition-colors hover:bg-[#4d3637] hover:text-white"
+            className="whitespace-nowrap rounded-lg px-4 py-2.5 text-sm font-medium transition-colors hover:bg-[#4d3637] hover:text-white"
           >
             Xem blog
           </Link>
         </nav>
       </aside>
 
-      <main className="h-full flex-1 overflow-y-auto p-6 md:p-8">
-        <header className="mb-10 flex items-center justify-between">
-          <h2 className="font-serif text-3xl text-[#3a2520]">
+      <main className="flex-1 p-4 sm:p-6 lg:h-full lg:overflow-y-auto lg:p-8">
+        <header className="mb-6 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="font-serif text-2xl text-[#3a2520] sm:text-3xl">
             Quản trị hệ thống
           </h2>
           <Link
             href="/dashboard/write"
-            className="rounded-full border border-sage-300 bg-sage-50 px-6 py-2.5 text-sm font-medium text-sage-500 transition-colors hover:bg-sage-100 hover:font-semibold"
+            className="inline-flex w-full justify-center rounded-full border border-sage-300 bg-sage-50 px-6 py-2.5 text-sm font-medium text-sage-500 transition-colors hover:bg-sage-100 hover:font-semibold sm:w-auto"
           >
             + Viết bài mới
           </Link>
         </header>
 
-        <div className="mb-10 grid grid-cols-1 gap-6 md:grid-cols-4">
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="rounded-2xl border border-[#f0e6e0] bg-white p-6 shadow-sm transition-transform hover:-translate-y-1"
+              className="rounded-2xl border border-[#f0e6e0] bg-white p-5 shadow-sm transition-transform hover:-translate-y-1 sm:p-6"
             >
               <p className="mb-2 text-sm font-medium text-[#7a5a55]">
                 {stat.label}
@@ -162,7 +164,7 @@ export default async function DashboardPage({
         </div>
 
         <div className="overflow-hidden rounded-[24px] border border-[#f0e6e0] bg-white shadow-sm">
-          <div className="grid grid-cols-[4fr_2fr_2fr_2fr] bg-[#fff5f6] px-6 py-4">
+          <div className="hidden grid-cols-[4fr_2fr_2fr_2fr] bg-[#fff5f6] px-6 py-4 lg:grid">
             <div className="text-base font-medium text-[#d96e83]">
               Tiêu đề bài viết
             </div>
@@ -180,12 +182,15 @@ export default async function DashboardPage({
               adminPosts.map((post) => (
                 <div
                   key={post.id}
-                  className="grid grid-cols-[4fr_2fr_2fr_2fr] items-center border-t border-[#f0e6e0] px-6 py-5 transition-colors hover:bg-[#fafafa]"
+                  className="grid gap-3 border-t border-[#f0e6e0] px-4 py-5 transition-colors hover:bg-[#fafafa] lg:grid-cols-[4fr_2fr_2fr_2fr] lg:items-center lg:px-6"
                 >
-                  <div className="pr-4 text-sm text-text_primary overflow-hidden text-ellipsis whitespace-nowrap">
+                  <div className="min-w-0 pr-4 text-sm font-semibold text-text_primary lg:overflow-hidden lg:text-ellipsis lg:whitespace-nowrap lg:font-normal">
                     {post.title}
                   </div>
                   <div className="text-sm text-text_primary">
+                    <span className="mr-2 text-xs font-semibold uppercase text-[#b09090] lg:hidden">
+                      Danh mục:
+                    </span>
                     {post.categoryLabel}
                   </div>
                   <div>
@@ -202,6 +207,7 @@ export default async function DashboardPage({
                     slug={post.slug}
                     canView={post.status === "published"}
                     isFeatured={post.isFeatured}
+                    className="items-start lg:items-end"
                   />
                 </div>
               ))
