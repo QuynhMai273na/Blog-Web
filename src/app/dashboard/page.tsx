@@ -201,6 +201,7 @@ export default async function DashboardPage({
                     postId={post.id}
                     slug={post.slug}
                     canView={post.status === "published"}
+                    isFeatured={post.isFeatured}
                   />
                 </div>
               ))

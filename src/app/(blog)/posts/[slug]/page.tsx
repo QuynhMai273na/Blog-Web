@@ -94,6 +94,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
                 postId={post.id}
                 slug={post.slug}
                 canView={false}
+                isFeatured={post.isFeatured}
                 redirectAfterDelete="/posts"
                 className="mt-6 items-center"
               />
@@ -139,6 +140,7 @@ export default async function PostDetailPage({ params }: PostDetailPageProps) {
               <CommentSection
                 postId={post.id}
                 initialCount={post.commentCount}
+                allowComments={post.allowComments}
               />
             </div>
           </article>

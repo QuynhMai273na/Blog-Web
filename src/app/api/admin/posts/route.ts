@@ -21,6 +21,10 @@ type CreatePostPayload = {
   contentJson?: unknown;
   uploadedAssetIds?: string[];
   tags?: string[];
+  options?: {
+    comments?: boolean;
+    featured?: boolean;
+  };
 };
 
 export async function POST(request: Request) {
@@ -84,6 +88,9 @@ export async function POST(request: Request) {
   const status = getPostStatus(payload.publishMode);
   const tags = normalizeTags(payload.tags);
   const thumbnailUrl = payload.thumbnailUrl ?? null;
+  const allowComments = payload.options?.comments ?? true;
+  const isFeatured = payload.options?.featured ?? false;
+  const featuredAt = isFeatured ? new Date().toISOString() : null;
 
   const { data: post, error: insertError } = await supabase
     .from("posts")
@@ -96,6 +103,9 @@ export async function POST(request: Request) {
       category_id: category.id,
       thumbnail_url: thumbnailUrl,
       tags,
+      allow_comments: allowComments,
+      is_featured: isFeatured,
+      featured_at: featuredAt,
       status,
       published_at:
         status === "published"

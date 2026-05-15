@@ -45,7 +45,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
   ];
 
   return (
-    <div className="flex min-h-full w-full flex-col bg-white pb-4">
+    <div className="flex min-h-full flex-1 w-full flex-col pb-4">
       <section className="w-full border-b border-[#f1ddd8] bg-[#fff5f6] px-6 py-10">
         <div className="mx-auto max-w-5xl text-center">
           <h1 className="mb-3 font-serif text-3xl font-normal leading-[1.4] tracking-normal text-text_primary md:text-[40px]">
@@ -146,6 +146,7 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
                     postId={post.id}
                     slug={post.slug}
                     canView
+                    isFeatured={post.isFeatured}
                     className="shrink-0 justify-start md:w-[150px] md:justify-end"
                   />
                 )}

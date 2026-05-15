@@ -96,6 +96,18 @@ const toggleMeta: Array<{
 ];
 
 const averageWordsPerMinute = 220;
+const defaultToggles: Record<ToggleKey, boolean> = {
+  comments: true,
+  featured: false,
+  emailSubscribers: false,
+  showHomepage: true,
+};
+const defaultSidebarOpen: Record<string, boolean> = {
+  publish: true,
+  cover: false,
+  category: false,
+  options: false,
+};
 const editorPageBackground =
   // "bg-[radial-gradient(circle_at_top_left,rgba(252,228,230,0.78),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(209,231,221,0.56),transparent_32%),linear-gradient(180deg,#fdfbf6_0%,#f8f1e7_50%,#fcfaf6_100%)]";
   "bg-[radial-gradient(circle_at_top_left,rgba(252,228,230,0.78),transparent_28%),radial-gradient(circle_at_78%_18%,rgba(209,231,221,0.56),transparent_32%),radial-gradient(circle_at_12%_88%,rgba(252,228,230,0.6),transparent_34%),radial-gradient(circle_at_88%_88%,rgba(209,231,221,0.55),transparent_34%),linear-gradient(180deg,#fdfbf6_0%,#f8f1e7_50%,#fcfaf6_100%)]";
@@ -176,6 +188,7 @@ function ToolbarBtn({
 
 function ActionButtons({
   disabled,
+  isEditing,
   isSaving,
   onDraft,
   onCancel,
@@ -183,6 +196,7 @@ function ActionButtons({
   onPublish,
 }: {
   disabled: boolean;
+  isEditing: boolean;
   isSaving: SaveIntent | null;
   onDraft: () => void;
   onCancel: () => void;
@@ -199,14 +213,16 @@ function ActionButtons({
       >
         Hủy
       </button>
-      <button
-        type="button"
-        onClick={onDraft}
-        disabled={disabled || isSaving !== null}
-        className="rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-[#8a6b6b] transition-all duration-200 hover:border-rose-300 hover:bg-rose-50"
-      >
-        {isSaving === "draft" ? "Đang lưu..." : "Lưu nháp"}
-      </button>
+      {!isEditing && (
+        <button
+          type="button"
+          onClick={onDraft}
+          disabled={disabled || isSaving !== null}
+          className="rounded-full border border-rose-200 bg-white px-4 py-2 text-sm font-medium text-[#8a6b6b] transition-all duration-200 hover:border-rose-300 hover:bg-rose-50"
+        >
+          {isSaving === "draft" ? "Đang lưu..." : "Lưu nháp"}
+        </button>
+      )}
       <button
         type="button"
         onClick={onPreview}
@@ -221,7 +237,11 @@ function ActionButtons({
         disabled={disabled || isSaving !== null}
         className="rounded-full bg-sage-300 px-5 py-2 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(168,198,159,0.32)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-sage-800"
       >
-        {isSaving === "publish" ? "Đang lưu..." : "Đăng bài"}
+        {isSaving === "publish"
+          ? "Đang lưu..."
+          : isEditing
+            ? "Lưu lại"
+            : "Đăng bài"}
       </button>
     </div>
   );
@@ -333,18 +353,10 @@ function WritePageContent() {
   const [isSaving, setIsSaving] = useState<SaveIntent | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
-  const [toggles, setToggles] = useState<Record<ToggleKey, boolean>>({
-    comments: true,
-    featured: false,
-    emailSubscribers: false,
-    showHomepage: true,
-  });
-  const [sidebarOpen, setSidebarOpen] = useState<Record<string, boolean>>({
-    publish: true,
-    cover: false,
-    category: false,
-    options: false,
-  });
+  const [toggles, setToggles] =
+    useState<Record<ToggleKey, boolean>>(defaultToggles);
+  const [sidebarOpen, setSidebarOpen] =
+    useState<Record<string, boolean>>(defaultSidebarOpen);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -433,6 +445,8 @@ function WritePageContent() {
             content_json?: unknown;
             thumbnail_url: string | null;
             tags?: string[] | null;
+            allow_comments?: boolean | null;
+            is_featured?: boolean | null;
             assets?: PostAssetRow[];
             status: PublishMode;
             published_at: string | null;
@@ -464,6 +478,11 @@ function WritePageContent() {
         setPublishMode(post.status ?? "draft");
         setScheduledAt(toDatetimeLocalValue(post.published_at));
         setTags(post.tags ?? []);
+        setToggles((current) => ({
+          ...current,
+          comments: post.allow_comments ?? true,
+          featured: post.is_featured ?? false,
+        }));
         setCoverImage(post.thumbnail_url ?? null);
         setCoverPublicUrl(post.thumbnail_url ?? null);
         const coverAsset = (post.assets ?? []).find(
@@ -564,6 +583,47 @@ function WritePageContent() {
   async function handleCancel() {
     await cleanupPendingAssets();
     router.push("/dashboard");
+  }
+
+  function resetEditorForm() {
+    if (coverObjectUrlRef.current) {
+      URL.revokeObjectURL(coverObjectUrlRef.current);
+      coverObjectUrlRef.current = null;
+    }
+
+    sessionAssetIdsRef.current.clear();
+    setEditingPostId(null);
+    setTitle("");
+    setExcerpt("");
+    setPublishMode("draft");
+    setScheduledAt("");
+    setCoverImage(null);
+    setCoverPublicUrl(null);
+    setCoverAssetId(null);
+    setCoverAssetStatus(null);
+    setCoverStoragePath("");
+    setCoverFileName("");
+    setIsCoverUploading(false);
+    setInlineUploadCount(0);
+    setIsDragging(false);
+    setWordCount(0);
+    setCategory(categoryOptions[0].value);
+    setTagInput("");
+    setTags([]);
+    setToggles(defaultToggles);
+    setSidebarOpen(defaultSidebarOpen);
+    editor?.commands.clearContent();
+  }
+
+  function scrollToActionBar() {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo({
+          top: document.documentElement.scrollHeight,
+          behavior: "smooth",
+        });
+      });
+    });
   }
 
   async function handleFile(file: File | null) {
@@ -790,6 +850,7 @@ function WritePageContent() {
       return;
     }
 
+    const wasEditing = Boolean(editingPostId);
     setIsSaving(intent);
     const requestedMode = intent === "draft" ? "draft" : publishMode;
     const response = await fetch(
@@ -829,12 +890,9 @@ function WritePageContent() {
       return;
     }
 
-    sessionAssetIdsRef.current.clear();
-    setCoverAssetStatus(coverAssetId ? "attached" : null);
-
-    setNotice({
+    const successNotice: NoticeState = {
       tone: "success",
-      message: editingPostId
+      message: wasEditing
         ? "Bài viết đã được cập nhật."
         : result.post.status === "published"
           ? "Bài viết đã được đăng."
@@ -845,11 +903,20 @@ function WritePageContent() {
         result.post.status === "published"
           ? `/posts/${result.post.slug}`
           : "/dashboard",
-    });
+    };
+
+    resetEditorForm();
+    setNotice(successNotice);
 
     if (result.post.status === "published") {
       router.refresh();
     }
+
+    if (wasEditing) {
+      window.history.replaceState(null, "", "/dashboard/write");
+    }
+
+    scrollToActionBar();
   }
 
   if (authState === "loading") {
@@ -898,7 +965,9 @@ function WritePageContent() {
             {editingPostId ? "Sửa bài viết" : "Viết bài mới"}
           </h1>
           <p className="mt-2 text-base text-[#7f6d6d]">
-            Soạn nội dung, lưu nháp, xem trước, đăng ngay hoặc lên lịch.
+            {editingPostId
+              ? "Cập nhật nội dung, xem trước và lưu lại thay đổi."
+              : "Soạn nội dung, lưu nháp, xem trước, đăng ngay hoặc lên lịch."}
           </p>
         </div>
 
@@ -1190,6 +1259,7 @@ function WritePageContent() {
               </div>
               <ActionButtons
                 disabled={!editor || hasActiveUploads}
+                isEditing={Boolean(editingPostId)}
                 isSaving={isSaving}
                 onDraft={() => void handleSubmit("draft")}
                 onCancel={() => void handleCancel()}

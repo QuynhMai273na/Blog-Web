@@ -28,7 +28,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     params?.cat && isBlogCategorySlug(params.cat) ? params.cat : undefined;
   const [recentPosts, categories] = await Promise.all([
     categorySlug
-      ? getPublishedPosts({ categorySlug, limit: 4 })
+      ? getPublishedPosts({
+          categorySlug,
+          limit: 4,
+          prioritizeFeatured: false,
+        })
       : getLatestPostsByCategorySlugs(BLOG_CATEGORY_SLUGS),
     getCategoryOptions(),
   ]);

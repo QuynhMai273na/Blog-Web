@@ -40,7 +40,7 @@ export default async function CategoryPage({
   const pageCategoryStyle = getBlogCategoryStyle(id);
 
   return (
-    <div className="flex min-h-full w-full flex-col bg-white pb-4">
+    <div className="flex min-h-full flex-1 w-full flex-col pb-4">
       <section
         className="relative min-h-[160px] w-full overflow-hidden border-b border-[#f1ddd8] bg-cover bg-center px-6 py-8 md:min-h-[200px] md:py-11"
         style={{ backgroundImage: `url(${pageCategoryStyle.heroImage})` }}
@@ -94,7 +94,7 @@ export default async function CategoryPage({
 
       {posts.length > 0 ? (
         <>
-          <section className="flex w-full flex-1 flex-col">
+          <section className="flex w-full flex-1 flex-col ">
             {posts.map((post) => {
               const postCategoryStyle = getBlogCategoryStyle(post.categorySlug);
 

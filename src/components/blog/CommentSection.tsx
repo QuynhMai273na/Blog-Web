@@ -16,9 +16,11 @@ type Comment = {
 export function CommentSection({
   postId,
   initialCount,
+  allowComments = true,
 }: {
   postId: string;
   initialCount: number;
+  allowComments?: boolean;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -173,7 +175,13 @@ export function CommentSection({
         )}
       </div>
 
-      {user ? (
+      {!allowComments && (
+        <p className="mt-6 rounded-[18px] border border-sand-200 bg-[#fcf5ea] px-4 py-3 text-sm text-[#8a7474]">
+          Bình luận đang được tắt cho bài viết này.
+        </p>
+      )}
+
+      {allowComments && user ? (
         <form onSubmit={handleSubmit} className="mt-6">
           <textarea
             value={body}
@@ -193,7 +201,7 @@ export function CommentSection({
             {isSubmitting ? "Đang gửi..." : "Gửi bình luận"}
           </button>
         </form>
-      ) : (
+      ) : allowComments ? (
         <p className="mt-6 text-sm text-[#8a6070]">
           <Link
             href="/login"
@@ -203,7 +211,7 @@ export function CommentSection({
           </Link>{" "}
           để bình luận.
         </p>
-      )}
+      ) : null}
     </section>
   );
 }

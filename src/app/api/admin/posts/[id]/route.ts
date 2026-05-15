@@ -23,6 +23,10 @@ type UpdatePostPayload = {
   contentJson?: unknown;
   uploadedAssetIds?: string[];
   tags?: string[];
+  options?: {
+    comments?: boolean;
+    featured?: boolean;
+  };
 };
 
 type RouteContext = {
@@ -37,7 +41,7 @@ export async function GET(_request: Request, context: RouteContext) {
   const { data: post, error } = await auth.supabase
     .from("posts")
     .select(
-      "id,title,slug,summary,content,content_json,published_at,status,thumbnail_url,tags,categories(slug)",
+      "id,title,slug,summary,content,content_json,published_at,status,thumbnail_url,tags,allow_comments,is_featured,featured_at,categories(slug)",
     )
     .eq(isUuid(id) ? "id" : "slug", id)
     .maybeSingle();
@@ -100,7 +104,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const { data: currentPost } = await auth.supabase
     .from("posts")
-    .select("id,slug,thumbnail_url")
+    .select("id,slug,thumbnail_url,allow_comments,is_featured,featured_at")
     .eq(isUuid(id) ? "id" : "slug", id)
     .maybeSingle();
 
@@ -114,6 +118,14 @@ export async function PATCH(request: Request, context: RouteContext) {
     payload.thumbnailUrl === undefined
       ? currentPost.thumbnail_url
       : payload.thumbnailUrl;
+  const allowComments =
+    payload.options?.comments ?? currentPost.allow_comments ?? true;
+  const isFeatured = payload.options?.featured ?? currentPost.is_featured ?? false;
+  const featuredAt = isFeatured
+    ? currentPost.is_featured
+      ? (currentPost.featured_at ?? new Date().toISOString())
+      : new Date().toISOString()
+    : null;
 
   const { data: post, error: updateError } = await auth.supabase
     .from("posts")
@@ -125,6 +137,9 @@ export async function PATCH(request: Request, context: RouteContext) {
       category_id: category.id,
       thumbnail_url: thumbnailUrl,
       tags,
+      allow_comments: allowComments,
+      is_featured: isFeatured,
+      featured_at: featuredAt,
       status,
       published_at:
         status === "published"
